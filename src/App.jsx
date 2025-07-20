@@ -8,9 +8,10 @@ import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
 import './App.css';
 
-const API_BASE_URL = 'https://phase-2-week-2-challenge-7rn2.onrender.com'; // **UPDATE THIS TO YOUR ACTUAL RENDER API URL**
+// ** IMPORTANT: Ensure this is your correct Render backend API URL **
+const API_BASE_URL = 'https://smart-goal-planner-xzdh.onrender.com';
 
-function App() { // This is now your main App component
+function App() {
   const [goals, setGoals] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
@@ -222,16 +223,11 @@ function App() { // This is now your main App component
   );
 }
 
-// ** This is the key change: Export App directly wrapped in Router **
-// You must import App into src/index.js and render it like:
-// ReactDOM.createRoot(document.getElementById('root')).render(
-//   <React.StrictMode>
-//     <App />
-//   </React.StrictMode>
-// );
+// ** IMPORTANT: Removed basename for Render deployment **
+// This component now directly wraps the App with BrowserRouter
 export default function RootApp() {
     return (
-        <Router basename="/smart-goal-planner"> {/* IMPORTANT for GitHub Pages */}
+        <Router> {/* basename has been removed here */}
             <App />
         </Router>
     );
