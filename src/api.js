@@ -1,5 +1,5 @@
 // src/api.js
-const API_BASE_URL = "https://phase-2-week-2-challenge.onrender.com";
+const API_BASE_URL = "https://phase-2-week-2-challenge-7rn2.onrender.com";
 
 export const fetchGoals = async () => {
   const response = await fetch(API_BASE_URL);
