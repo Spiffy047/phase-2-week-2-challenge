@@ -1,20 +1,20 @@
-
+// src/App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import GoalCard from './components/GoalCard';
 import GoalForm from './components/GoalForm';
-import Footer from './components/Footer'; 
-import './App.css'; 
+import Footer from './components/Footer';
+import './App.css';
 
-const API_BASE_URL = 'https://phase-2-week-2-challenge-7rn2.onrender.com';
+const API_BASE_URL = 'https://phase-2-week-2-challenge-7rn2.onrender.com'; // **UPDATE THIS TO YOUR ACTUAL RENDER API URL**
 
-function App() {
+function App() { // This is now your main App component
   const [goals, setGoals] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,6 +34,7 @@ function App() {
       setGoals(data);
     } catch (error) {
       console.error("Error fetching goals:", error);
+      // Optional: Add state to show error message to user
     }
   };
 
@@ -52,7 +53,7 @@ function App() {
       await response.json();
       fetchGoals();
       setIsFormOpen(false);
-      navigate('/goals'); // Navigate to goals page after adding
+      navigate('/goals');
     } catch (error) {
       console.error("Error adding goal:", error);
     }
@@ -160,7 +161,6 @@ function App() {
     return <div className="pagination">{pageNumbers}</div>;
   };
 
-
   return (
     <div className="App">
       <Navbar onAddGoalClick={() => { setEditingGoal(null); setIsFormOpen(true); }} />
@@ -209,7 +209,7 @@ function App() {
                       />
                     ))}
                   </div>
-                  {totalPages > 1 && <PageNumbers />} {/* Show pagination only if more than 1 page */}
+                  {totalPages > 1 && <PageNumbers />}
                 </>
               )}
             </div>
@@ -222,13 +222,17 @@ function App() {
   );
 }
 
-// Wrapper to enable useNavigate in App component
-function AppWrapper() {
-  return (
-    <Router>
-      <App />
-    </Router>
-  );
+// ** This is the key change: Export App directly wrapped in Router **
+// You must import App into src/index.js and render it like:
+// ReactDOM.createRoot(document.getElementById('root')).render(
+//   <React.StrictMode>
+//     <App />
+//   </React.StrictMode>
+// );
+export default function RootApp() {
+    return (
+        <Router basename="/smart-goal-planner"> {/* IMPORTANT for GitHub Pages */}
+            <App />
+        </Router>
+    );
 }
-
-export default AppWrapper;
