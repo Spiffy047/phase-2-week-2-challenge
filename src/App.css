@@ -1,0 +1,599 @@
+/* --- Global Resets & Base Styles --- */
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f7f6; /* Light background for the overall app */
+  color: #333;
+  line-height: 1.6; /* Improved readability */
+}
+
+/* --- Main App Container --- */
+.App {
+  max-width: 1200px; /* Max width for content */
+  margin: 0 auto; /* Center the app container */
+  padding: 0; /* Sections will have their own padding */
+  box-sizing: border-box; /* Include padding/border in element's total width/height */
+  display: flex; /* Use flexbox for overall layout */
+  flex-direction: column; /* Stack children (navbar, main, footer) vertically */
+  min-height: 100vh; /* Ensure app takes full viewport height */
+}
+
+/* --- Main Content Area --- */
+.app-main-content {
+  flex-grow: 1; /* Allows main content to expand and push footer to bottom */
+  padding: 20px; /* Padding for the main content area */
+  box-sizing: border-box;
+}
+
+/* --- General Section Styling (Applies to Home, Dashboard, Goals, Additional Info) --- */
+.app-section {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px; /* Space between sections */
+}
+
+/* --- Navbar Styles --- */
+.navbar {
+  background-color: #007bff; /* Primary blue for navbar */
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevent navbar from shrinking */
+  position: sticky; /* Make navbar sticky */
+  top: 0; /* Stick to the top of the viewport */
+  z-index: 1001; /* Ensure it's above other content and overlay */
+}
+
+.navbar-brand {
+  font-size: 1.8rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.navbar-nav {
+  list-style: none; /* Remove bullet points */
+  margin: 0;
+  padding: 0;
+  display: flex; /* Arrange links horizontally */
+  gap: 25px; /* Space between links */
+}
+
+.navbar-nav li a {
+  color: white;
+  text-decoration: none; /* Remove underline */
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.navbar-nav li a:hover {
+  color: #cce5ff; /* Lighter blue on hover */
+}
+
+/* --- Home Section Styles --- */
+.home-section {
+  text-align: center;
+  padding: 50px 30px; /* More padding for a prominent section */
+  background-color: #e9f5ff; /* Light blue background */
+  border: 1px solid #cce5ff;
+}
+
+.home-section h2 {
+  color: #007bff;
+  font-size: 2.8rem;
+  margin-bottom: 20px;
+}
+
+.home-section p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto 30px auto; /* Center paragraph and add space below */
+  color: #555;
+}
+
+.home-section .btn-primary {
+  background-color: #28a745; /* Green button */
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+}
+
+.home-section .btn-primary:hover {
+  background-color: #218838;
+}
+
+/* --- Dashboard Overview Styles --- */
+.dashboard-section {
+  /* Uses .app-section styles */
+  text-align: center;
+}
+
+.dashboard-overview h3 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 1.8rem;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive grid for stats */
+  gap: 20px; /* Space between stat cards */
+  margin-top: 20px;
+}
+
+.stat-card {
+  background-color: #f8f9fa; /* Light background for stat cards */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.stat-card h4 {
+  color: #007bff;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.stat-card p {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.no-goals-dashboard {
+  font-style: italic;
+  color: #666;
+  margin-top: 25px;
+}
+
+/* --- Goals Section Styles --- */
+.goals-section {
+  /* Uses .app-section styles */
+  /* Specific styles for goals section if needed */
+}
+
+.goals-section h2 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 25px; /* Increased space below heading */
+  text-align: center;
+  font-size: 2rem; /* Consistent heading size */
+}
+
+/* --- Add Goal Button (within Goals Section) --- */
+.add-goal-btn {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 30px auto;
+  padding: 12px 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-goal-btn:hover {
+  background-color: #218838;
+}
+
+/* --- Goal List Container (Crucial for organization) --- */
+.goal-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Responsive grid for cards */
+  gap: 25px; /* Consistent space between cards */
+  margin-top: 20px; /* Space from the button/form */
+}
+
+.goal-list p {
+  text-align: center;
+  grid-column: 1 / -1; /* Center "No goals yet" message across all columns */
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+/* --- Goal Card Styles --- */
+.goal-card {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth transition for hover */
+}
+
+.goal-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
+.goal-card h4 {
+  color: #007bff;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 10px;
+  word-wrap: break-word; /* Prevent long names from overflowing */
+}
+
+.goal-card p {
+  margin-bottom: 8px;
+  line-height: 1.4;
+  color: #444;
+}
+
+.progress-bar-container {
+  width: 100%;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  height: 12px;
+  margin: 15px 0 10px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #28a745;
+  border-radius: 5px;
+  transition: width 0.5s ease-in-out;
+}
+
+.progress-text {
+  text-align: right;
+  font-weight: bold;
+  color: #28a745;
+  margin-top: -5px;
+  margin-bottom: 15px;
+  font-size: 1.05rem;
+}
+
+/* Goal Status Indicators */
+.status-completed { color: #28a745; font-weight: bold; }
+.status-overdue { color: #dc3545; font-weight: bold; }
+.status-warning { color: #ffc107; font-weight: bold; }
+.status-on-track { color: #007bff; font-weight: bold; }
+
+/* Goal Card Actions */
+.goal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+/* --- Deposit Form Styles --- */
+.deposit-form-container {
+  background-color: #f0f8ff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px rgba(0, 123, 255, 0.2);
+  margin-top: 20px;
+  text-align: center;
+}
+
+.deposit-form-container label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.deposit-form-container input[type="number"] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #007bff;
+  border-radius: 5px;
+}
+
+/* --- Additional Content Section Styles --- */
+.additional-info-section {
+  /* Uses .app-section styles */
+  text-align: center;
+}
+
+.additional-info-section h3 {
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.info-card {
+  background-color: #f0f8ff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  border: 1px solid #d0e7ff;
+}
+
+.info-card h4 {
+  color: #007bff;
+  font-size: 1.4rem;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.info-card p {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #555;
+}
+
+.call-to-action {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+/* --- Footer Styles --- */
+.app-footer {
+  text-align: center;
+  padding: 20px;
+  background-color: #343a40;
+  color: #f8f9fa;
+  border-radius: 0;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevent footer from shrinking */
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* --- Form Overlay Styles (for modal) --- */
+.form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.form-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* --- Goal Form Container (inside GoalForm.jsx) --- */
+.goal-form-container {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  max-width: 550px;
+  width: 90%;
+  box-sizing: border-box;
+  transform: translateY(0);
+  transition: transform 0.3s ease-in-out;
+  animation: slideIn 0.3s forwards ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- Form Group and Input Styles (General) --- */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 1.05rem;
+  color: #495057;
+}
+
+.form-group input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+/* --- Button Styles (General) --- */
+.btn-primary, .btn-secondary, .btn-danger {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: bold;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-right: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:active, .btn-secondary:active, .btn-danger:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+  .App {
+    padding: 0;
+  }
+
+  .app-main-content {
+    padding: 15px;
+  }
+
+  .app-section {
+    padding: 20px 15px;
+    margin-bottom: 20px;
+  }
+
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 15px;
+    position: static; /* Make navbar static on small screens if sticking causes issues */
+  }
+
+  .navbar-brand {
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+
+  .navbar-nav {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .navbar-nav li a {
+    font-size: 1rem;
+    padding: 5px 0;
+    display: block;
+  }
+
+  .home-section {
+    padding: 30px 15px;
+  }
+
+  .home-section h2 {
+    font-size: 2rem;
+  }
+
+  .home-section p {
+    font-size: 1rem;
+  }
+
+  .home-section .btn-primary {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .dashboard-overview h3,
+  .goals-section h2,
+  .additional-info-section h3 {
+    font-size: 1.8rem;
+  }
+
+  .dashboard-stats,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .add-goal-btn {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+
+  .goal-list {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .goal-card {
+    padding: 20px;
+  }
+
+  .goal-card h4 {
+    font-size: 1.3rem;
+  }
+
+  .goal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .goal-actions button {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .goal-form-container {
+    padding: 20px;
+  }
+
+  .btn-primary, .btn-secondary, .btn-danger {
+    padding: 10px 15px;
+    font-size: 1rem;
+  }
+}
