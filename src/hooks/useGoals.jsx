@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 
-const API_BASE_URL = 'http://localhost:3001'; // Or your Render URL
+const API_BASE_URL = 'https://phase-2-week-2-challenge.onrender.com'; // Or your Render URL
 
 const useGoals = () => {
     const [goals, setGoals] = useState([]);
