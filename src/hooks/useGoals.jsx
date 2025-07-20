@@ -1,7 +1,7 @@
-// src/hooks/useGoals.js - Verify this EXACTLY
+
 import { useState, useEffect, useCallback } from 'react';
 
-// REPLACE THIS WITH YOUR RENDER API URL if deployed, otherwise keep localhost
+
 const API_BASE_URL = 'http://localhost:3001'; // Or your Render URL
 
 const useGoals = () => {
@@ -33,21 +33,21 @@ const useGoals = () => {
 
     const createGoal = async (newGoal) => {
         try {
-            console.log("useGoals - Sending newGoal to API:", newGoal); // <-- ADD THIS LOG
+            console.log("useGoals - Sending newGoal to API:", newGoal); 
             const response = await fetch(`${API_BASE_URL}/goals`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newGoal), // <--- Ensure newGoal is directly stringified
+                body: JSON.stringify(newGoal), 
             });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const createdGoal = await response.json();
-            console.log("useGoals - Received createdGoal from API:", createdGoal); // <-- ADD THIS LOG
+            console.log("useGoals - Received createdGoal from API:", createdGoal); 
             setGoals((prevGoals) => [...prevGoals, createdGoal]);
-            return createdGoal; // Return the newly created goal
+            return createdGoal; 
         } catch (err) {
             console.error("Failed to create goal:", err);
             throw err;
@@ -56,9 +56,9 @@ const useGoals = () => {
 
     const editGoal = async (id, updatedGoal) => {
         try {
-            console.log("useGoals - Sending updatedGoal to API:", updatedGoal); // <-- ADD THIS LOG
+            console.log("useGoals - Sending updatedGoal to API:", updatedGoal); 
             const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
-                method: 'PUT', // Or PATCH depending on full vs partial update preference
+                method: 'PUT', 
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -94,13 +94,13 @@ const useGoals = () => {
         const goalToUpdate = goals.find(goal => goal.id === goalId);
         if (!goalToUpdate) return;
 
-        // Ensure we're working with numbers
+        
         const currentSaved = Number(goalToUpdate.savedAmount);
         const target = Number(goalToUpdate.targetAmount);
 
         const newSavedAmount = currentSaved + amount;
 
-        // Prevent saved amount from exceeding target
+        
         const updatedSavedAmount = Math.min(newSavedAmount, target);
 
         const updatedGoal = {
@@ -109,18 +109,18 @@ const useGoals = () => {
         };
 
         try {
-            // Use PATCH for partial update, or PUT if you prefer sending the whole object
+           
             const response = await fetch(`${API_BASE_URL}/goals/${goalId}`, {
-                method: 'PATCH', // Changed to PATCH as it's a partial update
+                method: 'PATCH', 
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ savedAmount: updatedSavedAmount }), // Only send the changed field
+                body: JSON.stringify({ savedAmount: updatedSavedAmount }),
             });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data = await response.json(); // Get the updated goal from the server
+            const data = await response.json(); 
             setGoals((prevGoals) =>
                 prevGoals.map((goal) => (goal.id === goalId ? data : goal))
             );

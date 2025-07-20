@@ -1,16 +1,19 @@
-// src/components/Navbar.jsx
-import React from 'react';
 
-const Navbar = () => {
+import React from 'react';
+import { Link } from 'react-router-dom'; 
+
+const Navbar = ({ onAddGoalClick }) => {
   return (
     <nav className="navbar">
-      <div className="navbar-brand">Smart Goal Planner</div>
-      <ul className="navbar-nav">
-        <li><a href="#home">Home</a></li>
-        <li><a href="#dashboard">Dashboard</a></li>
-        <li><a href="#goals">Goals</a></li>
-        {/* You can add more links here later */}
+      <Link to="/" className="navbar-brand">Smart Goal Planner</Link> 
+      <ul className="navbar-nav"> 
+        <li><Link to="/" className="nav-link">Home</Link></li>
+        <li><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
+        <li><Link to="/goals" className="nav-link">Goals</Link></li>
       </ul>
+      <button onClick={onAddGoalClick} className="btn-primary">
+        Add New Goal
+      </button>
     </nav>
   );
 };

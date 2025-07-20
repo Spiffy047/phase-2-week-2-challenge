@@ -60,14 +60,23 @@
       "targetAmount": 1000,
       "savedAmount": 200,
       "category": "Shopping",
-      "targetDate": "2025-10-20",
+      "targetDate": "2024-08-10",
       "createdAt": "2024-07-01"
+    },
+    {
+      "id": "8",
+      "name": "New Phone",
+      "targetAmount": 1200,
+      "savedAmount": 0,
+      "category": "Electronics",
+      "targetDate": "2025-01-31",
+      "createdAt": "2024-07-10"
     },
     {
       "id": "9",
       "name": "Retirement Savings",
       "targetAmount": 100000,
-      "savedAmount": 15000,
+      "savedAmount": 25000,
       "category": "Retirement",
       "targetDate": "2035-01-01",
       "createdAt": "2023-01-01"
@@ -76,17 +85,10 @@
       "id": "10",
       "name": "Home Renovation",
       "targetAmount": 7500,
-      "savedAmount": 1000,
+      "savedAmount": 1500,
       "category": "Home",
       "targetDate": "2025-03-31",
       "createdAt": "2024-05-15"
-    },
-    {
-      "id": "ac8f",
-      "name": "Buy a car",
-      "targetAmount": 1000000,
-      "savedAmount": 50000,
-      "targetDate": "2026-10-20"
     }
   ]
 }

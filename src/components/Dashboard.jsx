@@ -1,43 +1,58 @@
-// src/components/Dashboard.jsx
-import React from 'react';
+
+import React from "react";
 
 const Dashboard = ({ goals }) => {
   const totalGoals = goals.length;
-  const completedGoals = goals.filter(goal => goal.savedAmount >= goal.targetAmount).length;
-  const inProgressGoals = totalGoals - completedGoals;
-
-  const totalTargetAmount = goals.reduce((sum, goal) => sum + Number(goal.targetAmount), 0);
   const totalSavedAmount = goals.reduce((sum, goal) => sum + Number(goal.savedAmount), 0);
 
+  const now = new Date(); 
+
+  const completedGoals = goals.filter(
+    (goal) => Number(goal.savedAmount) >= Number(goal.targetAmount)
+  ).length;
+
+  const onTrackGoals = goals.filter(goal => {
+    const targetDateObj = new Date(goal.targetDate);
+    const savedAmountNum = Number(goal.savedAmount);
+    const targetAmountNum = Number(goal.targetAmount);
+
+    return savedAmountNum < targetAmountNum && targetDateObj > now;
+  }).length;
+
+  const pastDueGoals = goals.filter(goal => {
+    const targetDateObj = new Date(goal.targetDate);
+    const savedAmountNum = Number(goal.savedAmount);
+    const targetAmountNum = Number(goal.targetAmount);
+
+    return targetDateObj <= now && savedAmountNum < targetAmountNum;
+  }).length;
+
   return (
-    <section className="dashboard-overview">
-      <h3>Dashboard Overview</h3>
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <h4>Total Goals</h4>
+    <div className="dashboard-container">
+      <h2>Overall Savings Overview</h2>
+      <div className="dashboard-metrics">
+        <div className="metric-card">
+          <h3>Total Goals</h3>
           <p>{totalGoals}</p>
         </div>
-        <div className="stat-card">
-          <h4>Completed Goals</h4>
-          <p>{completedGoals}</p>
+        <div className="metric-card">
+          <h3>Goals Completed</h3>
+          <p className="completed-metric">{completedGoals}</p>
         </div>
-        <div className="stat-card">
-          <h4>In Progress</h4>
-          <p>{inProgressGoals}</p>
+        <div className="metric-card">
+          <h3>On Track Goals</h3>
+          <p className="on-track-metric">{onTrackGoals}</p>
         </div>
-        <div className="stat-card">
-          <h4>Total Target</h4>
-          <p>KSh {totalTargetAmount.toFixed(2)}</p> {/* Changed here */}
+        <div className="metric-card">
+          <h3>Past Due Goals</h3>
+          <p className="past-due-metric">{pastDueGoals}</p>
         </div>
-        <div className="stat-card">
-          <h4>Total Saved</h4>
-          <p>KSh {totalSavedAmount.toFixed(2)}</p> {/* Changed here */}
+        <div className="metric-card total-saved">
+          <h3>Total Saved Across All Goals</h3>
+          <p className="currency-amount">KSh {totalSavedAmount.toFixed(2)}</p>
         </div>
       </div>
-      {totalGoals === 0 && (
-        <p className="no-goals-dashboard">Start adding goals to see your progress here!</p>
-      )}
-    </section>
+    </div>
   );
 };
 

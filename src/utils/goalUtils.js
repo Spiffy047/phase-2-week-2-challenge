@@ -40,12 +40,12 @@ export const getGoalStatus = (goal) => {
   const daysRemaining = differenceInDays(deadlineDate, today);
 
   if (isPast(deadlineDate) && !isBefore(deadlineDate, today)) {
-    // deadlineDate is today, but not strictly past means it's due today
+    
     if (savedAmount < targetAmount) {
       return "Overdue";
     }
   } else if (isPast(deadlineDate) && isBefore(deadlineDate, today)) {
-     // deadlineDate is strictly in the past
+     
     if (savedAmount < targetAmount) {
       return "Overdue";
     }
@@ -53,10 +53,10 @@ export const getGoalStatus = (goal) => {
 
 
   if (daysRemaining <= 7 && daysRemaining > 0) {
-    return "Warning"; // Deadline approaching
+    return "Warning"; 
   } else if (daysRemaining <= 0 && savedAmount < targetAmount) {
     return "Overdue";
   }
 
-  return "On Track"; // Default status if none of the above
+  return "On Track"; 
 };

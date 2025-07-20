@@ -1,137 +1,234 @@
-// src/App.jsx
-import React, { useState } from "react";
-import GoalCard from "./components/GoalCard";
-import GoalForm from "./components/GoalForm";
-import Dashboard from "./components/Dashboard";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import useGoals from "./hooks/useGoals";
-import "./App.css";
+
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import Navbar from './components/Navbar';
+import Dashboard from './components/Dashboard';
+import GoalCard from './components/GoalCard';
+import GoalForm from './components/GoalForm';
+import Footer from './components/Footer'; 
+import './App.css'; 
+
+const API_BASE_URL = 'http://localhost:3001';
 
 function App() {
-  const { goals, loading, error, createGoal, editGoal, removeGoal, makeDeposit } = useGoals();
-  const [showAddGoalForm, setShowAddGoalForm] = useState(false);
+  const [goals, setGoals] = useState([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const navigate = useNavigate(); // Hook for navigation
 
-  const handleAddGoalClick = () => {
-    setEditingGoal(null);
-    setShowAddGoalForm(true);
-  };
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const goalsPerPage = 4; // Display 4 goals per page
 
-  const handleEditGoal = (goalId) => {
-    const goalToEdit = goals.find(goal => goal.id === goalId);
-    if (goalToEdit) {
-      setEditingGoal(goalToEdit);
-      setShowAddGoalForm(true);
-    }
-  };
+  useEffect(() => {
+    fetchGoals();
+  }, []);
 
-  const handleFormSubmit = async (formData) => {
+  const fetchGoals = async () => {
     try {
-      if (editingGoal) {
-        await editGoal(editingGoal.id, formData);
-        setEditingGoal(null);
-      } else {
-        await createGoal(formData);
+      const response = await fetch(`${API_BASE_URL}/goals`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      setShowAddGoalForm(false);
-    } catch (err) {
-      console.error("Error during goal form submission:", err);
-      alert("Failed to save goal. Please try again.");
+      const data = await response.json();
+      setGoals(data);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
     }
   };
 
-  const handleFormCancel = () => {
-    setShowAddGoalForm(false);
+  const handleAddGoal = async (newGoal) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/goals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...newGoal, createdAt: new Date().toISOString() }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      await response.json();
+      fetchGoals();
+      setIsFormOpen(false);
+      navigate('/goals'); // Navigate to goals page after adding
+    } catch (error) {
+      console.error("Error adding goal:", error);
+    }
+  };
+
+  const handleUpdateGoal = async (id, updatedGoal) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedGoal),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      await response.json();
+      fetchGoals();
+      setIsFormOpen(false);
+      setEditingGoal(null);
+    } catch (error) {
+      console.error("Error updating goal:", error);
+    }
+  };
+
+  const handleDeleteGoal = async (id) => {
+    if (window.confirm("Are you sure you want to delete this goal?")) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        fetchGoals();
+      } catch (error) {
+        console.error("Error deleting goal:", error);
+      }
+    }
+  };
+
+  const handleDeposit = async (id, amount) => {
+    const goalToUpdate = goals.find(g => g.id === id);
+    if (!goalToUpdate) return;
+
+    const newSavedAmount = Number(goalToUpdate.savedAmount) + amount;
+    if (newSavedAmount > goalToUpdate.targetAmount) {
+      alert("Deposit exceeds target amount. Please deposit exact remaining or less.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ savedAmount: newSavedAmount }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      fetchGoals();
+    } catch (error) {
+      console.error("Error making deposit:", error);
+    }
+  };
+
+  const openEditForm = (id) => {
+    const goal = goals.find(g => g.id === id);
+    if (goal) {
+      setEditingGoal(goal);
+      setIsFormOpen(true);
+    }
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
     setEditingGoal(null);
   };
 
-  if (loading) return <div className="loading-message">Loading goals...</div>;
-  if (error) return <div className="error-message">Error: {error.message || "Failed to load goals"}</div>;
+  // Pagination Logic
+  const indexOfLastGoal = currentPage * goalsPerPage;
+  const indexOfFirstGoal = indexOfLastGoal - goalsPerPage;
+  const currentGoals = goals.slice(indexOfFirstGoal, indexOfLastGoal);
+
+  const totalPages = Math.ceil(goals.length / goalsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const PageNumbers = () => {
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(
+        <button
+          key={i}
+          onClick={() => paginate(i)}
+          className={currentPage === i ? 'btn-page active' : 'btn-page'}
+        >
+          {i}
+        </button>
+      );
+    }
+    return <div className="pagination">{pageNumbers}</div>;
+  };
+
 
   return (
     <div className="App">
-      <Navbar />
+      <Navbar onAddGoalClick={() => { setEditingGoal(null); setIsFormOpen(true); }} />
 
-      <main className="app-main-content"> {/* Changed from app-main to app-main-content for clarity */}
-        {/* --- Home Section --- */}
-        <section id="home" className="home-section app-section">
-          <div className="home-content">
-            <h2>Welcome to Your Smart Goal Planner!</h2>
-            <p>
-              Take control of your financial future. Our Smart Goal Planner helps you set, track, and achieve your savings goals with ease. Whether it's a dream vacation, a new home, or an emergency fund, we've got you covered.
-            </p>
-            <p>
-              Navigate to the Dashboard for an overall summary of your progress, or jump straight to Goals to manage your individual savings targets.
-            </p>
-            <button className="btn-primary" onClick={() => window.location.href = '#goals'}>Get Started with Goals</button>
-          </div>
-        </section>
+      {isFormOpen && (
+        <div className="form-overlay">
+          <GoalForm
+            onSubmit={editingGoal ? (data) => handleUpdateGoal(editingGoal.id, data) : handleAddGoal}
+            initialData={editingGoal || {}}
+            onCancel={closeForm}
+          />
+        </div>
+      )}
 
-        {/* --- Dashboard Section --- */}
-        <section id="dashboard" className="dashboard-section app-section">
-          <Dashboard goals={goals} />
-        </section>
-
-        {/* --- Goals Management Section --- */}
-        <section id="goals" className="goals-section app-section">
-          <h2>Your Financial Goals</h2>
-          <button className="btn-primary add-goal-btn" onClick={handleAddGoalClick}>
-            Add New Goal
-          </button>
-
-          {showAddGoalForm && (
-            <div className="form-overlay">
-              <GoalForm
-                onSubmit={handleFormSubmit}
-                initialData={editingGoal || {}}
-                onCancel={handleFormCancel}
-              />
+      <div className="main-content">
+        <Routes>
+          <Route path="/" element={
+            <div className="app-section home-section">
+              <h2>Welcome to Smart Goal Planner!</h2>
+              <p>Your personal assistant to track and achieve your financial goals. Get started by adding your first goal or view your dashboard.</p>
+              <Link to="/goals" className="btn-primary">View My Goals</Link>
             </div>
-          )}
-
-          <div className="goal-list">
-            {goals.length === 0 ? (
-              <p>No goals yet. Add your first goal to start tracking your savings!</p>
-            ) : (
-              goals.map((goal) => (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  onUpdate={handleEditGoal}
-                  onDelete={removeGoal}
-                  onDeposit={makeDeposit}
-                />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* --- Additional Content Section (Example to fill more space) --- */}
-        <section className="additional-info-section app-section">
-            <h3>Why Set Financial Goals?</h3>
-            <div className="info-grid">
-                <div className="info-card">
-                    <h4>Clarity & Focus</h4>
-                    <p>Clearly defined goals provide a roadmap for your money, helping you make smarter spending and saving decisions.</p>
-                </div>
-                <div className="info-card">
-                    <h4>Motivation</h4>
-                    <p>Seeing your progress towards a specific target keeps you motivated and committed to your financial plan.</p>
-                </div>
-                <div className="info-card">
-                    <h4>Financial Security</h4>
-                    <p>Achieving savings goals builds a strong financial foundation, offering peace of mind and security for the future.</p>
-                </div>
+          } />
+          <Route path="/dashboard" element={
+            <div className="app-section dashboard-container">
+              <Dashboard goals={goals} />
             </div>
-            <p className="call-to-action">Start planning your goals today and watch your savings grow!</p>
-        </section>
+          } />
+          <Route path="/goals" element={
+            <div className="app-section goals-section">
+              <h2>Your Financial Goals</h2>
+              <button onClick={() => { setEditingGoal(null); setIsFormOpen(true); }} className="add-goal-btn">Add New Goal</button>
 
-      </main>
+              {goals.length === 0 ? (
+                <p className="no-goals-message">No goals set yet. Start by adding a new goal!</p>
+              ) : (
+                <>
+                  <div className="goal-list-container">
+                    {currentGoals.map(goal => (
+                      <GoalCard
+                        key={goal.id}
+                        goal={goal}
+                        onUpdate={openEditForm}
+                        onDelete={handleDeleteGoal}
+                        onDeposit={handleDeposit}
+                      />
+                    ))}
+                  </div>
+                  {totalPages > 1 && <PageNumbers />} {/* Show pagination only if more than 1 page */}
+                </>
+              )}
+            </div>
+          } />
+        </Routes>
+      </div>
 
       <Footer />
     </div>
   );
 }
 
-export default App;
+// Wrapper to enable useNavigate in App component
+function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
+export default AppWrapper;

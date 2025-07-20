@@ -156,7 +156,7 @@ This project can be deployed with the frontend on GitHub Pages and the backend (
       "name": "smart-goal-planner",
       "version": "0.1.0",
       "private": true,
-      "homepage": "https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPOSITORY_NAME", // <-- Add this line
+      "homepage": "https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPOSITORY_NAME", 
       "dependencies": {
         // ...
       },
@@ -165,17 +165,16 @@ This project can be deployed with the frontend on GitHub Pages and the backend (
         "build": "react-scripts build",
         "test": "react-scripts test",
         "eject": "react-scripts eject",
-        "predeploy": "npm run build", // <-- Add these two lines
-        "deploy": "gh-pages -d build"  // <--
+        "predeploy": "npm run build", 
+        "deploy": "gh-pages -d build"  
       },
       "eslintConfig": {
-        // ...
-      },
+        
       "browserslist": {
-        // ...
+        
       },
       "devDependencies": {
-        "gh-pages": "^X.Y.Z" // Version might differ
+        "gh-pages": "^X.Y.Z" 
       }
     }
     ```
@@ -204,14 +203,10 @@ Render is a great platform for deploying services like JSON Server.
       - type: web
         name: smart-goal-planner-backend
         env: node
-        plan: free # Use 'starter' or 'pro' for production apps
+        plan: free 
         buildCommand: npm install
         startCommand: json-server --watch db.json --port $PORT
-        # If you need persistent storage for db.json:
-        # disk:
-        #   name: data-disk
-        #   mountPath: /opt/render/project/src/db.json
-        #   sizeGB: 1
+        
     ```
 
       * **Note on `disk`:** JSON Server by default stores data in `db.json`. If you want changes (adding/editing goals) to persist *after* the Render server restarts (which happens periodically on the free plan), you'll need to configure a persistent disk in Render and enable the `disk` section in `render.yaml`. For simple demo purposes, you might skip this if you don't mind data resetting.
@@ -240,7 +235,7 @@ Render is a great platform for deploying services like JSON Server.
     import { useState, useEffect, useCallback } from 'react';
 
     // REPLACE THIS WITH YOUR RENDER API URL
-    const API_BASE_URL = '[https://smart-goal-planner-backend.onrender.com](https://smart-goal-planner-backend.onrender.com)'; // Example URL
+    const API_BASE_URL = '[https://smart-goal-planner-backend.onrender.com](https://smart-goal-planner-backend.onrender.com)'; 
 
     const useGoals = () => {
         // ... rest of your code
@@ -277,7 +272,7 @@ Distributed under the MIT License. See `LICENSE` for more information. (You'll n
   * Thanks to [JSON Server](https://github.com/typicode/json-server) for providing a quick mock API.
   * Thanks to [React.js](https://react.dev/) for a fantastic frontend library.
 
-<!-- end list -->
+
 
 ````
 

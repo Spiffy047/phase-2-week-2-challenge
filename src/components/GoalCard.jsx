@@ -1,21 +1,27 @@
-// src/components/GoalCard.jsx
-import React, { useState } from "react"; // <--- FIXED THIS LINE
+
+import React, { useState } from "react";
 
 const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
   const [depositAmount, setDepositAmount] = useState("");
   const [showDepositInput, setShowDepositInput] = useState(false);
 
-  // Ensure these are treated as numbers from the start
   const targetAmountNum = Number(goal.targetAmount);
   const savedAmountNum = Number(goal.savedAmount);
+  const remainingAmount = targetAmountNum - savedAmountNum;
 
-  // Use the numeric versions for calculations
   const progress = (savedAmountNum / targetAmountNum) * 100;
   const isCompleted = savedAmountNum >= targetAmountNum;
-  const isWarning = progress > 75 && !isCompleted;
 
-  // Ensure targetDate is a valid Date object for comparison
-  const isOverdue = new Date(goal.targetDate) < new Date() && !isCompleted;
+ 
+  const targetDateObj = new Date(goal.targetDate);
+  const now = new Date();
+  const diffTime = targetDateObj.getTime() - now.getTime(); 
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+  
+  const isWarning = diffDays <= 30 && diffDays > 0 && !isCompleted;
+ 
+  const isOverdue = targetDateObj < now && !isCompleted;
 
   const handleDepositChange = (e) => {
     setDepositAmount(e.target.value);
@@ -35,7 +41,7 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
   const getStatusText = () => {
     if (isCompleted) return "Completed!";
     if (isOverdue) return "Overdue!";
-    if (isWarning) return "Close to Target!";
+    if (isWarning) return "Close to Deadline!"; 
     return "On Track";
   };
 
@@ -45,6 +51,26 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
     if (isWarning) return "status-warning";
     return "status-on-track";
   };
+
+  
+  const getTimeRemainingText = () => {
+    if (isCompleted) return "Goal Completed!";
+    if (isOverdue) return "Deadline Passed!";
+    if (!goal.targetDate) return "No deadline set."; 
+
+    
+    if (diffDays === 0) return "Due Today!";
+    if (diffDays === 1) return "1 day left!";
+    if (diffDays > 0 && diffDays <= 30) return `${diffDays} days left - Urgent!`;
+    if (diffDays > 30 && diffDays < 365) return `${diffDays} days left`; 
+    if (diffDays >= 365) {
+      const years = Math.floor(diffDays / 365);
+      const remainingDays = diffDays % 365;
+      return `${years} year${years > 1 ? 's' : ''}, ${remainingDays} day${remainingDays > 1 ? 's' : ''} left`;
+    }
+    return ""; 
+  };
+
 
   return (
     <div className="goal-card">
@@ -56,15 +82,21 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
         Saved: <span className="currency-amount">KSh {savedAmountNum.toFixed(2)}</span>
       </p>
       <p>
+        Remaining: <span className="currency-amount">KSh {remainingAmount.toFixed(2)}</span> 
+      </p>
+      <p>
+        Category: **{goal.category || "N/A"}** 
+      </p>
+      <p>
         Target Date: {
-          // Robust date display: check if goal.targetDate exists before converting
           goal.targetDate
             ? new Date(goal.targetDate).toLocaleDateString("en-KE", {
                 year: 'numeric', month: 'long', day: 'numeric'
               })
-            : 'N/A' // Or provide a placeholder
+            : 'N/A'
         }
       </p>
+      <p>Time Left: **{getTimeRemainingText()}**</p> 
 
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${Math.min(100, isNaN(progress) ? 0 : progress)}%` }}></div>

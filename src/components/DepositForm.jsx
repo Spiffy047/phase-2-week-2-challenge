@@ -1,4 +1,4 @@
-// src/components/DepositForm.jsx
+
 import React, { useState } from "react";
 
 const DepositForm = ({ onDeposit, onCancel }) => {

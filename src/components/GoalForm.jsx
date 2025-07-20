@@ -1,4 +1,4 @@
-// src/components/GoalForm.jsx - Verify this EXACTLY
+
 import React, { useState, useEffect } from "react";
 
 const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
@@ -6,6 +6,7 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
     name: initialData.name || "",
     targetAmount: initialData.targetAmount !== undefined ? String(initialData.targetAmount) : "",
     savedAmount: initialData.savedAmount !== undefined ? String(initialData.savedAmount) : "",
+    category: initialData.category || "", 
     targetDate: initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "",
   });
 
@@ -14,6 +15,7 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
       name: initialData.name || "",
       targetAmount: initialData.targetAmount !== undefined ? String(initialData.targetAmount) : "",
       savedAmount: initialData.savedAmount !== undefined ? String(initialData.savedAmount) : "",
+      category: initialData.category || "", 
       targetDate: initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "",
     });
   }, [initialData]);
@@ -52,16 +54,19 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
       alert("Saved Amount cannot exceed Target Amount.");
       return;
     }
+    if (!formData.category.trim()) { 
+      alert("Category cannot be empty.");
+      return;
+    }
 
-    // THE CRITICAL PART: Ensure this object is constructed correctly
     const dataToSubmit = {
       name: formData.name,
       targetAmount: targetAmount,
       savedAmount: isNaN(savedAmount) ? 0 : savedAmount,
+      category: formData.category, 
       targetDate: formData.targetDate
     };
 
-    console.log("GoalForm - dataToSubmit:", dataToSubmit); // <-- ADD THIS LOG
     onSubmit(dataToSubmit);
   };
 
@@ -80,6 +85,10 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
         <div className="form-group">
           <label htmlFor="savedAmount">Current Saved Amount (KSh):</label>
           <input type="number" id="savedAmount" name="savedAmount" value={formData.savedAmount} onChange={handleChange} min="0" step="0.01" />
+        </div>
+        <div className="form-group">
+          <label htmlFor="category">Category:</label> 
+          <input type="text" id="category" name="category" value={formData.category} onChange={handleChange} required />
         </div>
         <div className="form-group">
           <label htmlFor="targetDate">Target Date:</label>
