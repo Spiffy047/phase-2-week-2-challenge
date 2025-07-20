@@ -8,7 +8,7 @@ import GoalForm from './components/GoalForm';
 import Footer from './components/Footer'; 
 import './App.css'; 
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'https://phase-2-week-2-challenge.onrender.com';
 
 function App() {
   const [goals, setGoals] = useState([]);
