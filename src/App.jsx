@@ -8,7 +8,7 @@ import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
 import './App.css';
 
-// ** IMPORTANT: Ensure this is your correct Render backend API URL **
+//Render backend API URL **
 const API_BASE_URL = 'https://smart-goal-planner-xzdh.onrender.com';
 
 function App() {
@@ -19,7 +19,7 @@ function App() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const goalsPerPage = 4; // Display 4 goals per page
+  const goalsPerPage = 4; 
 
   useEffect(() => {
     fetchGoals();
@@ -35,7 +35,7 @@ function App() {
       setGoals(data);
     } catch (error) {
       console.error("Error fetching goals:", error);
-      // Optional: Add state to show error message to user
+     
     }
   };
 
@@ -223,11 +223,9 @@ function App() {
   );
 }
 
-// ** IMPORTANT: Removed basename for Render deployment **
-// This component now directly wraps the App with BrowserRouter
 export default function RootApp() {
     return (
-        <Router> {/* basename has been removed here */}
+        <Router> {}
             <App />
         </Router>
     );
