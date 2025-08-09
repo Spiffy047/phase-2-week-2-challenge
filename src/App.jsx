@@ -8,7 +8,6 @@ import Footer from './components/Footer';
 import { app as firebaseApp } from './components/firebaseConfig';
 import './App.css';
 
-// New helper function to get the Firebase ID token
 const getAuthToken = async () => {
   const auth = getAuth(firebaseApp);
   const user = auth.currentUser;
@@ -36,7 +35,7 @@ function App() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      throw error; // Re-throw to be caught by AuthPage
+      throw error;
     }
   };
 
@@ -44,18 +43,16 @@ function App() {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      throw error; // Re-throw to be caught by AuthPage
+      throw error;
     }
   };
 
-  // Example of using the new getAuthToken function to fetch protected data
   const fetchProtectedData = async () => {
     const token = await getAuthToken();
     if (!token) {
       console.error("User not logged in, cannot fetch data.");
       return;
     }
-    // You would use this token in the Authorization header of your API calls
   };
 
   if (loading) {

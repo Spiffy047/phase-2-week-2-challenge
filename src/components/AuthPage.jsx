@@ -20,7 +20,7 @@ const AuthPage = ({ onLogin, onRegister }) => {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message.replace('Firebase: ', '')); // Clean up the error message
+      setError(err.message.replace('Firebase: ', ''));
     } finally {
       setLoading(false);
     }
