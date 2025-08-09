@@ -10,10 +10,6 @@ import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
 import './App.css'; // Import the main stylesheet
 
-const __app_id = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const __initial_auth_token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
 const App = () => {
   const [goals, setGoals] = useState([]);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -27,8 +23,8 @@ const App = () => {
 
   useEffect(() => {
     // Initialize Firebase
-    if (Object.keys(firebaseConfig).length > 0) {
-      const app = initializeApp(firebaseConfig);
+    if (typeof __firebase_config !== 'undefined' && JSON.parse(__firebase_config).projectId) {
+      const app = initializeApp(JSON.parse(__firebase_config));
       const firestore = getFirestore(app);
       const firebaseAuth = getAuth(app);
       setDb(firestore);
@@ -39,7 +35,7 @@ const App = () => {
           setUserId(user.uid);
         } else {
           try {
-            if (__initial_auth_token) {
+            if (typeof __initial_auth_token !== 'undefined') {
               await signInWithCustomToken(firebaseAuth, __initial_auth_token);
             } else {
               await signInAnonymously(firebaseAuth);
@@ -55,7 +51,8 @@ const App = () => {
 
   useEffect(() => {
     if (isAuthReady && db && userId) {
-      const goalsColRef = collection(db, 'artifacts', __app_id, 'users', userId, 'goals');
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const goalsColRef = collection(db, 'artifacts', appId, 'users', userId, 'goals');
       const unsubscribe = onSnapshot(goalsColRef, (snapshot) => {
         const goalsData = snapshot.docs.map(doc => ({
           ...doc.data(),
@@ -72,7 +69,8 @@ const App = () => {
   const handleAddGoal = async (newGoal) => {
     if (db && userId) {
       try {
-        const goalsColRef = collection(db, 'artifacts', __app_id, 'users', userId, 'goals');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const goalsColRef = collection(db, 'artifacts', appId, 'users', userId, 'goals');
         await addDoc(goalsColRef, newGoal);
         setShowGoalForm(false);
       } catch (error) {
@@ -85,7 +83,8 @@ const App = () => {
   const handleUpdateGoal = async (updatedGoal) => {
     if (db && userId && updatedGoal.id) {
       try {
-        const goalDocRef = doc(db, 'artifacts', __app_id, 'users', userId, 'goals', updatedGoal.id);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', updatedGoal.id);
         await setDoc(goalDocRef, updatedGoal);
         setShowGoalForm(false);
         setEditingGoal(null);
@@ -99,7 +98,8 @@ const App = () => {
   const handleDeleteGoal = async () => {
     if (db && userId && goalToDelete) {
       try {
-        const goalDocRef = doc(db, 'artifacts', __app_id, 'users', userId, 'goals', goalToDelete.id);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', goalToDelete.id);
         await deleteDoc(goalDocRef);
         setShowDeleteModal(false);
         setGoalToDelete(null);
@@ -116,7 +116,8 @@ const App = () => {
         const goalToUpdate = goals.find(goal => goal.id === goalId);
         if (goalToUpdate) {
           const newSavedAmount = Number(goalToUpdate.savedAmount) + Number(amount);
-          const goalDocRef = doc(db, 'artifacts', __app_id, 'users', userId, 'goals', goalId);
+          const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+          const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', goalId);
           await setDoc(goalDocRef, { ...goalToUpdate, savedAmount: newSavedAmount });
         }
       } catch (error) {
