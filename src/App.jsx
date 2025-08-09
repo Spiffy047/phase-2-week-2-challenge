@@ -1,6 +1,6 @@
 /* global __firebase_config, __initial_auth_token, __app_id */
 import React, { useState, useEffect } from 'react';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import Navbar from './components/Navbar';
@@ -8,7 +8,8 @@ import Dashboard from './components/Dashboard';
 import GoalCard from './components/GoalCard';
 import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
-import './App.css'; // Import the main stylesheet
+import AuthModal from './components/AuthModal';
+import './App.css';
 
 const App = () => {
   const [goals, setGoals] = useState([]);
@@ -20,9 +21,10 @@ const App = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
 
   useEffect(() => {
-    // Initialize Firebase
     if (typeof __firebase_config !== 'undefined') {
       const firebaseConfig = JSON.parse(__firebase_config);
       if (firebaseConfig.projectId) {
@@ -32,10 +34,13 @@ const App = () => {
         setDb(firestore);
         setAuth(firebaseAuth);
 
-        onAuthStateChanged(firebaseAuth, async (user) => {
+        const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
           if (user) {
             setUserId(user.uid);
+            setShowAuthModal(false);
           } else {
+            setUserId(null);
+            setShowAuthModal(true);
             try {
               if (typeof __initial_auth_token !== 'undefined') {
                 await signInWithCustomToken(firebaseAuth, __initial_auth_token);
@@ -43,11 +48,12 @@ const App = () => {
                 await signInAnonymously(firebaseAuth);
               }
             } catch (error) {
-              console.error("Error during authentication:", error);
+              console.error("Error during anonymous authentication:", error);
             }
           }
           setIsAuthReady(true);
         });
+        return () => unsubscribeAuth();
       }
     }
   }, []);
@@ -68,7 +74,34 @@ const App = () => {
     }
   }, [isAuthReady, db, userId]);
 
-  // Function to add a new goal
+  const handleAuthSubmit = async (email, password, mode) => {
+    if (auth) {
+      try {
+        if (mode === 'signup') {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+        setShowAuthModal(false);
+      } catch (error) {
+        console.error("Authentication error:", error);
+        // Implement custom modal for error messages
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+        setGoals([]);
+        setShowAuthModal(true);
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
+    }
+  };
+
   const handleAddGoal = async (newGoal) => {
     if (db && userId) {
       try {
@@ -82,7 +115,6 @@ const App = () => {
     }
   };
 
-  // Function to update an existing goal
   const handleUpdateGoal = async (updatedGoal) => {
     if (db && userId && updatedGoal.id) {
       try {
@@ -97,7 +129,6 @@ const App = () => {
     }
   };
 
-  // Function to delete a goal
   const handleDeleteGoal = async () => {
     if (db && userId && goalToDelete) {
       try {
@@ -112,7 +143,6 @@ const App = () => {
     }
   };
 
-  // Function to make a deposit into a goal
   const handleDeposit = async (goalId, amount) => {
     if (db && userId) {
       try {
@@ -139,25 +169,38 @@ const App = () => {
     setShowGoalForm(false);
     setEditingGoal(null);
   };
-  
-  // This function will be passed to the Navbar to reset the view to the dashboard.
+
   const handleViewDashboardClick = () => {
     setShowGoalForm(false);
     setEditingGoal(null);
   };
-
+  
+  if (!isAuthReady) {
+    return <div>Loading...</div>;
+  }
+  
   return (
     <div className="app-container">
-      <Navbar onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }} onViewDashboardClick={handleViewDashboardClick} />
+      <Navbar
+        onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }}
+        onViewDashboardClick={handleViewDashboardClick}
+        onLoginClick={() => { setAuthMode('login'); setShowAuthModal(true); }}
+        onSignupClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
+        onLogoutClick={handleLogout}
+        userId={userId}
+      />
 
       <main className="main-content-wrapper">
-        {showGoalForm ? (
-          <GoalForm
-            onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
-            initialData={editingGoal || {}}
-            onCancel={handleCancelForm}
+        {showAuthModal && (
+          <AuthModal
+            mode={authMode}
+            onSubmit={handleAuthSubmit}
+            onClose={() => setShowAuthModal(false)}
+            onSwitchMode={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
           />
-        ) : (
+        )}
+
+        {userId && !showGoalForm && !showAuthModal ? (
           <>
             <Dashboard goals={goals} />
             <div className="goals-list">
@@ -176,12 +219,17 @@ const App = () => {
               )}
             </div>
           </>
-        )}
+        ) : userId && showGoalForm && !showAuthModal ? (
+          <GoalForm
+            onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
+            initialData={editingGoal || {}}
+            onCancel={handleCancelForm}
+          />
+        ) : null}
       </main>
 
       <Footer />
 
-      {/* Custom Modal for Delete Confirmation */}
       {showDeleteModal && (
         <div className="modal-overlay">
           <div className="modal-content">
