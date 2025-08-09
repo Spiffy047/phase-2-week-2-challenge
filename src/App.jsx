@@ -1,6 +1,5 @@
-/* global __firebase_config, __initial_auth_token, __app_id */
 import React, { useState, useEffect } from 'react';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import Navbar from './components/Navbar';
@@ -25,43 +24,59 @@ const App = () => {
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
 
   useEffect(() => {
-    if (typeof __firebase_config !== 'undefined') {
-      const firebaseConfig = JSON.parse(__firebase_config);
-      if (firebaseConfig.projectId) {
-        const app = initializeApp(firebaseConfig);
-        const firestore = getFirestore(app);
-        const firebaseAuth = getAuth(app);
-        setDb(firestore);
-        setAuth(firebaseAuth);
+    // Replace with your actual Firebase config object
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-        const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
-          if (user) {
-            setUserId(user.uid);
-            setShowAuthModal(false);
-          } else {
-            setUserId(null);
-            setShowAuthModal(true);
-            try {
-              if (typeof __initial_auth_token !== 'undefined') {
-                await signInWithCustomToken(firebaseAuth, __initial_auth_token);
-              } else {
-                await signInAnonymously(firebaseAuth);
-              }
-            } catch (error) {
-              console.error("Error during anonymous authentication:", error);
-            }
+    let deployedFirebaseConfig;
+    if (typeof process !== 'undefined' && process.env.VITE_FIREBASE_CONFIG) {
+        try {
+            deployedFirebaseConfig = JSON.parse(process.env.VITE_FIREBASE_CONFIG);
+        } catch (e) {
+            console.error("Failed to parse VITE_FIREBASE_CONFIG environment variable.", e);
+        }
+    }
+
+    if (firebaseConfig.projectId && firebaseConfig.apiKey) {
+      const app = initializeApp(deployedFirebaseConfig || firebaseConfig);
+      const firestore = getFirestore(app);
+      const firebaseAuth = getAuth(app);
+      setDb(firestore);
+      setAuth(firebaseAuth);
+
+      const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+        if (user) {
+          setUserId(user.uid);
+          setShowAuthModal(false);
+        } else {
+          setUserId(null);
+          setShowAuthModal(true);
+          try {
+            // For deployed apps, anonymous sign-in might not be required if auth modal is shown
+            // It's still good practice to have as a fallback.
+            await signInAnonymously(firebaseAuth);
+          } catch (error) {
+            console.error("Error during anonymous authentication:", error);
           }
-          setIsAuthReady(true);
-        });
-        return () => unsubscribeAuth();
-      }
+        }
+        setIsAuthReady(true);
+      });
+      return () => unsubscribeAuth();
+    } else {
+      console.error("Firebase config is missing. Please provide your configuration.");
+      setIsAuthReady(true); // Still set to true to show an error message instead of loading.
     }
   }, []);
 
   useEffect(() => {
     if (isAuthReady && db && userId) {
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-      const goalsColRef = collection(db, 'artifacts', appId, 'users', userId, 'goals');
+      const goalsColRef = collection(db, 'artifacts', 'default-app-id', 'users', userId, 'goals');
       const unsubscribe = onSnapshot(goalsColRef, (snapshot) => {
         const goalsData = snapshot.docs.map(doc => ({
           ...doc.data(),
@@ -105,8 +120,7 @@ const App = () => {
   const handleAddGoal = async (newGoal) => {
     if (db && userId) {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const goalsColRef = collection(db, 'artifacts', appId, 'users', userId, 'goals');
+        const goalsColRef = collection(db, 'artifacts', 'default-app-id', 'users', userId, 'goals');
         await addDoc(goalsColRef, newGoal);
         setShowGoalForm(false);
       } catch (error) {
@@ -118,8 +132,7 @@ const App = () => {
   const handleUpdateGoal = async (updatedGoal) => {
     if (db && userId && updatedGoal.id) {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', updatedGoal.id);
+        const goalDocRef = doc(db, 'artifacts', 'default-app-id', 'users', userId, 'goals', updatedGoal.id);
         await setDoc(goalDocRef, updatedGoal);
         setShowGoalForm(false);
         setEditingGoal(null);
@@ -132,8 +145,7 @@ const App = () => {
   const handleDeleteGoal = async () => {
     if (db && userId && goalToDelete) {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', goalToDelete.id);
+        const goalDocRef = doc(db, 'artifacts', 'default-app-id', 'users', userId, 'goals', goalToDelete.id);
         await deleteDoc(goalDocRef);
         setShowDeleteModal(false);
         setGoalToDelete(null);
@@ -149,8 +161,7 @@ const App = () => {
         const goalToUpdate = goals.find(goal => goal.id === goalId);
         if (goalToUpdate) {
           const newSavedAmount = Number(goalToUpdate.savedAmount) + Number(amount);
-          const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-          const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', goalId);
+          const goalDocRef = doc(db, 'artifacts', 'default-app-id', 'users', userId, 'goals', goalId);
           await setDoc(goalDocRef, { ...goalToUpdate, savedAmount: newSavedAmount });
         }
       } catch (error) {
@@ -174,11 +185,16 @@ const App = () => {
     setShowGoalForm(false);
     setEditingGoal(null);
   };
-  
+
   if (!isAuthReady) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin"></div>
+        <p className="text-gray-600 font-semibold text-lg">Loading...</p>
+      </div>
+    );
   }
-  
+
   return (
     <div className="app-container">
       <Navbar
