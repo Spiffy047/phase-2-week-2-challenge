@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth, useFirestore } from './firebaseConfig'; // Assuming a firebaseConfig file exists for auth and firestore instances
 
 const AuthPage = ({ onLogin, onRegister }) => {
   const [isLogin, setIsLogin] = useState(true);
