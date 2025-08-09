@@ -1,3 +1,4 @@
+/* global __firebase_config, __initial_auth_token */
 import React, { useState, useEffect } from 'react';
 import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
