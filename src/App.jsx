@@ -5,7 +5,7 @@ import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { app as firebaseApp } from './firebaseConfig';
+import { app as firebaseApp } from './components/firebaseConfig';
 import './App.css';
 
 // New helper function to get the Firebase ID token
