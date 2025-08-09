@@ -24,7 +24,8 @@ const App = () => {
   useEffect(() => {
     // Initialize Firebase
     if (typeof __firebase_config !== 'undefined' && JSON.parse(__firebase_config).projectId) {
-      const app = initializeApp(JSON.parse(__firebase_config));
+      const firebaseConfig = JSON.parse(__firebase_config);
+      const app = initializeApp(firebaseConfig);
       const firestore = getFirestore(app);
       const firebaseAuth = getAuth(app);
       setDb(firestore);
