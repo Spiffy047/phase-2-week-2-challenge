@@ -1,6 +1,5 @@
-/* global __firebase_config, __initial_auth_token, __app_id */
 import React, { useState, useEffect } from 'react';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import Navbar from './components/Navbar';
@@ -8,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import GoalCard from './components/GoalCard';
 import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
+import AuthPage from './components/AuthPage'; // Make sure this is the updated AuthPage
 import './App.css';
 
 const App = () => {
@@ -18,14 +18,22 @@ const App = () => {
   const [auth, setAuth] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [goalToDelete, setGoalToDelete] = useState(null);
   const [firebaseInitError, setFirebaseInitError] = useState(null);
-  const [showAuthPage, setShowAuthPage] = useState(true);
 
+  // State for the custom modal
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    isDestructive: false,
+  });
+
+  // Effect to handle Firebase initialization and authentication state changes
   useEffect(() => {
     let firebaseConfig = null;
-    
+
     // Check for Canvas environment variables first
     if (typeof __firebase_config !== 'undefined') {
       try {
@@ -51,7 +59,7 @@ const App = () => {
       setIsAuthReady(true);
       return;
     }
-    
+
     // If we have a configuration, attempt to initialize the app
     if (firebaseConfig && typeof firebaseConfig === 'object' && firebaseConfig.apiKey) {
       try {
@@ -61,16 +69,14 @@ const App = () => {
         setDb(firestore);
         setAuth(firebaseAuth);
 
-        const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+        const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (user) => {
           console.log("onAuthStateChanged fired. User:", user);
           if (user) {
             console.log("User is authenticated. UID:", user.uid);
             setUserId(user.uid);
-            setShowAuthPage(false);
           } else {
             console.log("No user found.");
             setUserId(null);
-            setShowAuthPage(true);
           }
           setIsAuthReady(true);
           console.log("Authentication state is ready.");
@@ -87,6 +93,7 @@ const App = () => {
     }
   }, []);
 
+  // Effect to handle real-time data fetching from Firestore once authenticated
   useEffect(() => {
     if (isAuthReady && db && userId) {
       const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -105,32 +112,21 @@ const App = () => {
             setFirebaseInitError("Could not connect to Firestore. Check your network connection.");
         }
       });
-
       return () => unsubscribe();
     }
   }, [isAuthReady, db, userId]);
 
+  // Handler for login, passed to AuthPage
   const handleLogin = async (email, password) => {
     if (auth) {
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        // The onAuthStateChanged listener will handle setting the userId
-      } catch (error) {
-        console.error("Login error:", error);
-        alert("Login failed. Please check your email and password.");
-      }
+      await signInWithEmailAndPassword(auth, email, password);
     }
   };
 
+  // Handler for registration, passed to AuthPage
   const handleRegister = async (email, password) => {
     if (auth) {
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        // The onAuthStateChanged listener will handle setting the userId
-      } catch (error) {
-        console.error("Registration error:", error);
-        alert("Registration failed. Email may already be in use.");
-      }
+      await createUserWithEmailAndPassword(auth, email, password);
     }
   };
 
@@ -140,7 +136,6 @@ const App = () => {
         await signOut(auth);
         setGoals([]);
         setUserId(null);
-        setShowAuthPage(true);
       } catch (error) {
         console.error("Logout error:", error);
       }
@@ -174,14 +169,13 @@ const App = () => {
     }
   };
 
-  const handleDeleteGoal = async () => {
-    if (db && userId && goalToDelete) {
+  const handleDeleteGoal = async (goalId) => {
+    if (db && userId && goalId) {
       try {
         const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const goalDocRef = doc(db, 'artifacts', currentAppId, 'users', userId, 'goals', goalToDelete.id);
+        const goalDocRef = doc(db, 'artifacts', currentAppId, 'users', userId, 'goals', goalId);
         await deleteDoc(goalDocRef);
-        setShowDeleteModal(false);
-        setGoalToDelete(null);
+        setShowModal(false);
       } catch (error) {
         console.error("Error deleting goal:", error);
       }
@@ -203,6 +197,31 @@ const App = () => {
       }
     }
   };
+
+  // Function to show a custom confirmation modal
+  const showConfirmationModal = (goalId, goalName) => {
+    setModalContent({
+      title: 'Confirm Deletion',
+      message: `Are you sure you want to delete the goal: ${goalName}? This action cannot be undone.`,
+      onConfirm: () => handleDeleteGoal(goalId),
+      onCancel: () => setShowModal(false),
+      isDestructive: true,
+    });
+    setShowModal(true);
+  };
+
+  // Function to show a custom info/alert modal
+  const showInfoModal = (title, message) => {
+    setModalContent({
+      title,
+      message,
+      onConfirm: () => setShowModal(false),
+      onCancel: null,
+      isDestructive: false,
+    });
+    setShowModal(true);
+  };
+
 
   const handleEditGoalClick = (goalId) => {
     const goalToEdit = goals.find(goal => goal.id === goalId);
@@ -233,9 +252,49 @@ const App = () => {
     );
   }
 
+  // Custom Modal Component
+  const CustomModal = () => {
+    if (!showModal) return null;
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center">
+        <div className="relative p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="mt-3 text-center">
+            <h3 className={`text-lg leading-6 font-medium ${modalContent.isDestructive ? 'text-red-600' : 'text-gray-900'}`}>
+              {modalContent.title}
+            </h3>
+            <div className="mt-2 px-7 py-3">
+              <p className="text-sm text-gray-500">
+                {modalContent.message}
+              </p>
+            </div>
+            <div className="items-center px-4 py-3">
+              {modalContent.onConfirm && (
+                <button
+                  onClick={modalContent.onConfirm}
+                  className={`px-4 py-2 ${modalContent.isDestructive ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white text-base font-medium rounded-md w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${modalContent.isDestructive ? 'red-500' : 'blue-500'}`}
+                >
+                  {modalContent.isDestructive ? 'Delete' : 'OK'}
+                </button>
+              )}
+              {modalContent.onCancel && (
+                <button
+                  onClick={modalContent.onCancel}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <div className="app-container">
-      {!userId && showAuthPage ? (
+      {!userId ? (
         <AuthPage onLogin={handleLogin} onRegister={handleRegister} />
       ) : (
         <>
@@ -244,13 +303,13 @@ const App = () => {
             onLogoutClick={handleLogout}
             userId={userId}
           />
-
           <main className="main-content-wrapper">
             {showGoalForm ? (
               <GoalForm
                 onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
                 initialData={editingGoal || {}}
                 onCancel={handleCancelForm}
+                onAlert={showInfoModal}
               />
             ) : (
               <>
@@ -262,8 +321,9 @@ const App = () => {
                         key={goal.id}
                         goal={goal}
                         onUpdate={handleEditGoalClick}
-                        onDelete={() => { setGoalToDelete(goal); setShowDeleteModal(true); }}
+                        onDelete={showConfirmationModal}
                         onDeposit={handleDeposit}
+                        onAlert={showInfoModal}
                       />
                     ))
                   ) : (
@@ -274,89 +334,9 @@ const App = () => {
             )}
           </main>
           <Footer />
+          <CustomModal />
         </>
       )}
-
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h4>Confirm Deletion</h4>
-            <p>Are you sure you want to delete the goal: **{goalToDelete?.name}**?</p>
-            <div className="modal-actions">
-              <button className="btn-danger" onClick={handleDeleteGoal}>Delete</button>
-              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-const AuthPage = ({ onLogin, onRegister }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isLogin) {
-      onLogin(email, password);
-    } else {
-      onRegister(email, password);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          {isLogin ? 'Login to Your Account' : 'Create a New Account'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="email">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="password">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            {isLogin ? 'Login' : 'Register'}
-          </button>
-        </form>
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
