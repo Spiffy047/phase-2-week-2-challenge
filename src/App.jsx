@@ -25,70 +25,64 @@ const App = () => {
 
   useEffect(() => {
     let firebaseConfig = null;
-    let initialAuthToken = null;
-
+    
+    // Check for Canvas environment variables first
     if (typeof __firebase_config !== 'undefined') {
       try {
         firebaseConfig = JSON.parse(__firebase_config);
-        initialAuthToken = __initial_auth_token;
         console.log("Using Canvas environment variables.");
       } catch (e) {
         console.error("Failed to parse __firebase_config from Canvas globals.", e);
-        firebaseConfig = {
-          apiKey: "placeholder",
-          authDomain: "placeholder",
-          projectId: "placeholder",
-          storageBucket: "placeholder",
-          messagingSenderId: "placeholder",
-          appId: "placeholder"
-        };
-        setFirebaseInitError("Using placeholder Firebase config. The provided config was invalid.");
+        setFirebaseInitError("The provided Firebase config from the Canvas environment is invalid.");
+      }
+    } else if (process.env.REACT_APP_FIREBASE_CONFIG) {
+      // If not in Canvas, check for a user-provided environment variable (e.g., from Render)
+      try {
+        firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
+        console.log("Using user-provided REACT_APP_FIREBASE_CONFIG.");
+      } catch (e) {
+        console.error("Failed to parse REACT_APP_FIREBASE_CONFIG from environment variables.", e);
+        setFirebaseInitError("The Firebase config environment variable is not valid JSON.");
       }
     } else {
-      console.log("No Canvas environment variables found. Using placeholder config.");
-      firebaseConfig = {
-        apiKey: "placeholder",
-        authDomain: "placeholder",
-        projectId: "placeholder",
-        storageBucket: "placeholder",
-        messagingSenderId: "placeholder",
-        appId: "placeholder"
-      };
-      setFirebaseInitError("No Firebase configuration found. Using a placeholder config.");
-    }
-    
-    if (!firebaseConfig || typeof firebaseConfig !== 'object' || !firebaseConfig.apiKey) {
-      console.error("Firebase config is missing or invalid after all attempts.");
-      setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the environment variable is a correctly formatted JSON string.");
+      // If neither is found, we cannot initialize Firebase.
+      console.log("No Firebase configuration found.");
+      setFirebaseInitError("No Firebase configuration found. Please set the REACT_APP_FIREBASE_CONFIG environment variable.");
       setIsAuthReady(true);
       return;
     }
+    
+    // If we have a configuration, attempt to initialize the app
+    if (firebaseConfig && typeof firebaseConfig === 'object' && firebaseConfig.apiKey) {
+      try {
+        const app = initializeApp(firebaseConfig);
+        const firestore = getFirestore(app);
+        const firebaseAuth = getAuth(app);
+        setDb(firestore);
+        setAuth(firebaseAuth);
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      const firestore = getFirestore(app);
-      const firebaseAuth = getAuth(app);
-      setDb(firestore);
-      setAuth(firebaseAuth);
-
-      const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
-        console.log("onAuthStateChanged fired. User:", user);
-        if (user) {
-          console.log("User is authenticated. UID:", user.uid);
-          setUserId(user.uid);
-          setShowAuthPage(false);
-        } else {
-          console.log("No user found.");
-          setUserId(null);
-          setShowAuthPage(true);
-        }
+        const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+          console.log("onAuthStateChanged fired. User:", user);
+          if (user) {
+            console.log("User is authenticated. UID:", user.uid);
+            setUserId(user.uid);
+            setShowAuthPage(false);
+          } else {
+            console.log("No user found.");
+            setUserId(null);
+            setShowAuthPage(true);
+          }
+          setIsAuthReady(true);
+          console.log("Authentication state is ready.");
+        });
+        return () => unsubscribeAuth();
+      } catch (e) {
+        console.error("Firebase initialization failed:", e);
+        setFirebaseInitError(`Firebase initialization failed. Error: ${e.message}`);
         setIsAuthReady(true);
-        console.log("Authentication state is ready.");
-      });
-      return () => unsubscribeAuth();
-    } catch (e) {
-      console.error("Firebase initialization failed:", e);
-      setFirebaseInitError(`Firebase initialization failed. Error: ${e.message}`);
+      }
+    } else {
+      setFirebaseInitError("Firebase configuration is incomplete or invalid.");
       setIsAuthReady(true);
     }
   }, []);
