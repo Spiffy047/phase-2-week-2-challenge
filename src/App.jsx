@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AuthPage from './AuthPage';
-import Dashboard from './Dashboard';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import AuthPage from './components/AuthPage';
+import Dashboard from './components/Dashboard';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import { app as firebaseApp } from './firebaseConfig';
 import './App.css';
 
