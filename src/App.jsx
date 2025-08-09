@@ -1,6 +1,6 @@
 /* global __firebase_config, __initial_auth_token */
 import React, { useState, useEffect } from 'react';
-import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import Navbar from './components/Navbar';
@@ -8,7 +8,6 @@ import Dashboard from './components/Dashboard';
 import GoalCard from './components/GoalCard';
 import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
-import LandingPage from './components/LandingPage';
 import './App.css';
 
 const App = () => {
@@ -22,6 +21,7 @@ const App = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
   const [firebaseInitError, setFirebaseInitError] = useState(null);
+  const [showAuthPage, setShowAuthPage] = useState(true);
 
   useEffect(() => {
     let firebaseConfig = null;
@@ -76,9 +76,11 @@ const App = () => {
         if (user) {
           console.log("User is authenticated. UID:", user.uid);
           setUserId(user.uid);
+          setShowAuthPage(false);
         } else {
           console.log("No user found.");
           setUserId(null);
+          setShowAuthPage(true);
         }
         setIsAuthReady(true);
         console.log("Authentication state is ready.");
@@ -113,14 +115,27 @@ const App = () => {
       return () => unsubscribe();
     }
   }, [isAuthReady, db, userId]);
-  
-  const handleAnonymousSignIn = async () => {
+
+  const handleLogin = async (email, password) => {
     if (auth) {
       try {
-        await signInAnonymously(auth);
+        await signInWithEmailAndPassword(auth, email, password);
+        // The onAuthStateChanged listener will handle setting the userId
       } catch (error) {
-        console.error("Error during anonymous sign-in:", error);
-        setFirebaseInitError(`Anonymous sign-in failed. Error: ${error.message}`);
+        console.error("Login error:", error);
+        alert("Login failed. Please check your email and password.");
+      }
+    }
+  };
+
+  const handleRegister = async (email, password) => {
+    if (auth) {
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        // The onAuthStateChanged listener will handle setting the userId
+      } catch (error) {
+        console.error("Registration error:", error);
+        alert("Registration failed. Email may already be in use.");
       }
     }
   };
@@ -131,6 +146,7 @@ const App = () => {
         await signOut(auth);
         setGoals([]);
         setUserId(null);
+        setShowAuthPage(true);
       } catch (error) {
         console.error("Logout error:", error);
       }
@@ -219,49 +235,49 @@ const App = () => {
     );
   }
 
-  // Render the LandingPage if the user is not authenticated
-  if (!userId) {
-    return <LandingPage onGetStarted={handleAnonymousSignIn} />;
-  }
-
   return (
     <div className="app-container">
-      <Navbar
-        onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }}
-        onLogoutClick={handleLogout}
-        userId={userId}
-      />
-
-      <main className="main-content-wrapper">
-        {showGoalForm ? (
-          <GoalForm
-            onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
-            initialData={editingGoal || {}}
-            onCancel={handleCancelForm}
+      {!userId && showAuthPage ? (
+        <AuthPage onLogin={handleLogin} onRegister={handleRegister} />
+      ) : (
+        <>
+          <Navbar
+            onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }}
+            onLogoutClick={handleLogout}
+            userId={userId}
           />
-        ) : (
-          <>
-            <Dashboard goals={goals} />
-            <div className="goals-list">
-              {goals.length > 0 ? (
-                goals.map(goal => (
-                  <GoalCard
-                    key={goal.id}
-                    goal={goal}
-                    onUpdate={handleEditGoalClick}
-                    onDelete={() => { setGoalToDelete(goal); setShowDeleteModal(true); }}
-                    onDeposit={handleDeposit}
-                  />
-                ))
-              ) : (
-                <p className="no-goals-message">No goals set yet. Add a new goal to get started!</p>
-              )}
-            </div>
-          </>
-        )}
-      </main>
 
-      <Footer />
+          <main className="main-content-wrapper">
+            {showGoalForm ? (
+              <GoalForm
+                onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
+                initialData={editingGoal || {}}
+                onCancel={handleCancelForm}
+              />
+            ) : (
+              <>
+                <Dashboard goals={goals} />
+                <div className="goals-list">
+                  {goals.length > 0 ? (
+                    goals.map(goal => (
+                      <GoalCard
+                        key={goal.id}
+                        goal={goal}
+                        onUpdate={handleEditGoalClick}
+                        onDelete={() => { setGoalToDelete(goal); setShowDeleteModal(true); }}
+                        onDeposit={handleDeposit}
+                      />
+                    ))
+                  ) : (
+                    <p className="no-goals-message">No goals set yet. Add a new goal to get started!</p>
+                  )}
+                </div>
+              </>
+            )}
+          </main>
+          <Footer />
+        </>
+      )}
 
       {showDeleteModal && (
         <div className="modal-overlay">
@@ -278,3 +294,73 @@ const App = () => {
     </div>
   );
 };
+
+
+const AuthPage = ({ onLogin, onRegister }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (isLogin) {
+      onLogin(email, password);
+    } else {
+      onRegister(email, password);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
+          {isLogin ? 'Login to Your Account' : 'Create a New Account'}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700" htmlFor="email">
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            {isLogin ? 'Login' : 'Register'}
+          </button>
+        </form>
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
