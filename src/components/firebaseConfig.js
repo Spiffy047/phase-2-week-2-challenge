@@ -2,20 +2,23 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// IMPORTANT: These variables are provided by the hosting environment. Do not modify.
+// IMPORTANT: The following variables are automatically provided in the Canvas environment.
+// For local development, you should replace the placeholder with your own Firebase project configuration.
 const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
 
-// Replace these placeholder values with your Firebase project's configuration
-const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+// Your web app's Firebase configuration.
+// Replace these with the configuration for your specific project.
+const firebaseConfig = {
+    apiKey: "AIzaSyDzoILYwextDqGj1gkLmzVMFpvIRVC04lk",
+    authDomain: "smart-5321a.firebaseapp.com",
+    projectId: "smart-5321a",
+    storageBucket: "smart-5321a.firebasestorage.app",
+    messagingSenderId: "401027865806",
+    appId: "1:401027865806:web:36af1f89c71e1cf84b449f",
+    measurementId: "G-JWY4SD5THE"
 };
 
-// Initialize Firebase with the config
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
