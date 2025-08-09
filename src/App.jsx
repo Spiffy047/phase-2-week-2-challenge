@@ -22,6 +22,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ** This is your correct Render backend API URL **
 const API_BASE_URL = 'https://smart-goal-planner-xzdh.onrender.com';
 
+// ** Utility functions for converting between naming conventions **
+const toSnakeCase = obj => {
+  if (!obj || typeof obj !== 'object') return obj;
+  return Object.keys(obj).reduce((acc, key) => {
+    const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    acc[snakeCaseKey] = obj[key];
+    return acc;
+  }, {});
+};
+
+const toCamelCase = obj => {
+  if (!obj || typeof obj !== 'object') return obj;
+  return Object.keys(obj).reduce((acc, key) => {
+    const camelCaseKey = key.replace(/(_\w)/g, match => match[1].toUpperCase());
+    acc[camelCaseKey] = obj[key];
+    return acc;
+  }, {});
+};
+
+// Main App component
 const App = () => {
   const [session, setSession] = useState(null);
   const [goals, setGoals] = useState([]);
@@ -43,7 +63,9 @@ const App = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setGoals(data);
+      // Convert all received goal objects to camelCase
+      const camelCaseData = data.map(toCamelCase);
+      setGoals(camelCaseData);
     } catch (error) {
       console.error("Error fetching goals:", error);
     }
@@ -52,9 +74,14 @@ const App = () => {
   // Effect to listen for Supabase auth state changes and fetch goals
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
-        fetchGoals(session.access_token);
+      if (_event === 'SIGNED_OUT') {
+        setSession(null);
+        setGoals([]);
+      } else {
+        setSession(session);
+        if (session) {
+          fetchGoals(session.access_token);
+        }
       }
     });
 
@@ -63,6 +90,9 @@ const App = () => {
       if (session) {
         fetchGoals(session.access_token);
       }
+    }).catch(error => {
+      console.error("Error getting session:", error);
+      setSession(null);
     });
 
     return () => authListener.subscription.unsubscribe();
@@ -72,19 +102,22 @@ const App = () => {
   const handleAddGoal = async (newGoal) => {
     try {
       const token = session.access_token;
+      // Convert new goal object to snake_case before sending
+      const goalToSend = toSnakeCase(newGoal);
       const response = await fetch(`${API_BASE_URL}/goals`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newGoal),
+        body: JSON.stringify(goalToSend),
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const createdGoal = await response.json();
-      setGoals((prevGoals) => [...prevGoals, createdGoal]);
+      // Convert received goal back to camelCase
+      setGoals((prevGoals) => [...prevGoals, toCamelCase(createdGoal)]);
       setIsFormOpen(false);
       navigate('/goals');
     } catch (error) {
@@ -96,20 +129,24 @@ const App = () => {
   const handleUpdateGoal = async (updatedGoal) => {
     try {
       const token = session.access_token;
+      // Convert updated goal to snake_case before sending
+      const goalToSend = toSnakeCase(updatedGoal);
       const response = await fetch(`${API_BASE_URL}/goals/${updatedGoal.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(updatedGoal),
+        body: JSON.stringify(goalToSend),
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      // Convert received data back to camelCase
+      const camelCaseData = toCamelCase(data);
       setGoals((prevGoals) =>
-        prevGoals.map((goal) => (goal.id === data.id ? data : goal))
+        prevGoals.map((goal) => (goal.id === camelCaseData.id ? camelCaseData : goal))
       );
       setIsFormOpen(false);
       setEditingGoal(null);
@@ -149,7 +186,7 @@ const App = () => {
     try {
       const token = session.access_token;
       const goalToUpdate = goals.find(g => g.id === id);
-      const newSavedAmount = Math.min(Number(goalToUpdate.saved_amount) + amount, Number(goalToUpdate.target_amount));
+      const newSavedAmount = Math.min(Number(goalToUpdate.savedAmount) + amount, Number(goalToUpdate.targetAmount));
   
       const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
         method: 'PATCH',
@@ -157,6 +194,7 @@ const App = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
+        // The key 'saved_amount' is in snake_case to match the database
         body: JSON.stringify({ saved_amount: newSavedAmount }),
       });
   
@@ -164,8 +202,10 @@ const App = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const updatedGoal = await response.json();
+      // Convert received goal back to camelCase before updating state
+      const camelCaseGoal = toCamelCase(updatedGoal);
       setGoals((prevGoals) =>
-        prevGoals.map((goal) => (goal.id === updatedGoal.id ? updatedGoal : goal))
+        prevGoals.map((goal) => (goal.id === camelCaseGoal.id ? camelCaseGoal : goal))
       );
     } catch (error) {
       console.error("Error depositing to goal:", error);
@@ -214,74 +254,80 @@ const App = () => {
   };
 
   return (
-    <Router>
-      <div className="App">
-        {session && <Navbar onLogout={handleLogout} onAddGoalClick={() => { setEditingGoal(null); setIsFormOpen(true); navigate('/goals'); }} />}
-        <div className="main-content">
-          <Routes>
-            <Route path="/login" element={session ? <Navigate to="/" /> : <AuthPage supabase={supabase} />} />
-            <Route path="/" element={
-              session ? (
-                <div className="app-section home-section">
-                  <h2 className="text-3xl font-bold">Welcome!</h2>
-                  <p>Start planning your financial future today.</p>
-                  <Link to="/goals" className="btn-primary mt-4">View Your Goals</Link>
-                </div>
-              ) : (
-                <Navigate to="/login" />
-              )
-            } />
-            <Route path="/dashboard" element={
-              session ? (
-                <div className="app-section dashboard-container">
-                  <Dashboard goals={goals} />
-                </div>
-              ) : (
-                <Navigate to="/login" />
-              )
-            } />
-            <Route path="/goals" element={
-              session ? (
-                <div className="app-section goals-section">
-                  <h2>Your Financial Goals</h2>
-                  <button onClick={() => { setEditingGoal(null); setIsFormOpen(true); }} className="add-goal-btn">Add New Goal</button>
+    <div className="App">
+      {session && <Navbar onLogout={handleLogout} onAddGoalClick={() => { setEditingGoal(null); setIsFormOpen(true); navigate('/goals'); }} />}
+      <div className="main-content">
+        <Routes>
+          <Route path="/login" element={session ? <Navigate to="/" /> : <AuthPage supabase={supabase} />} />
+          <Route path="/" element={
+            session ? (
+              <div className="app-section home-section">
+                <h2 className="text-3xl font-bold">Welcome!</h2>
+                <p>Start planning your financial future today.</p>
+                <Link to="/goals" className="btn-primary mt-4">View Your Goals</Link>
+              </div>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
+          <Route path="/dashboard" element={
+            session ? (
+              <div className="app-section dashboard-container">
+                <Dashboard goals={goals} />
+              </div>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
+          <Route path="/goals" element={
+            session ? (
+              <div className="app-section goals-section">
+                <h2>Your Financial Goals</h2>
+                <button onClick={() => { setEditingGoal(null); setIsFormOpen(true); }} className="add-goal-btn">Add New Goal</button>
 
-                  {isFormOpen && (
-                    <GoalForm
-                      onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
-                      initialData={editingGoal || {}}
-                      onCancel={() => setIsFormOpen(false)}
-                    />
-                  )}
-                  {goals.length === 0 && !isFormOpen ? (
-                    <p className="no-goals-message">No goals set yet. Start by adding a new goal!</p>
-                  ) : (
-                    <>
-                      <div className="goal-list-container">
-                        {currentGoals.map(goal => (
-                          <GoalCard
-                            key={goal.id}
-                            goal={goal}
-                            onUpdate={openEditForm}
-                            onDelete={handleDeleteGoal}
-                            onDeposit={handleDeposit}
-                          />
-                        ))}
-                      </div>
-                      {totalPages > 1 && <PageNumbers />}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <Navigate to="/login" />
-              )
-            } />
-          </Routes>
-        </div>
-        <Footer />
+                {isFormOpen && (
+                  <GoalForm
+                    onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
+                    initialData={editingGoal || {}}
+                    onCancel={() => setIsFormOpen(false)}
+                  />
+                )}
+                {goals.length === 0 && !isFormOpen ? (
+                  <p className="no-goals-message">No goals set yet. Start by adding a new goal!</p>
+                ) : (
+                  <>
+                    <div className="goal-list-container">
+                      {currentGoals.map(goal => (
+                        <GoalCard
+                          key={goal.id}
+                          goal={goal}
+                          onUpdate={openEditForm}
+                          onDelete={handleDeleteGoal}
+                          onDeposit={handleDeposit}
+                        />
+                      ))}
+                    </div>
+                    {totalPages > 1 && <PageNumbers />}
+                  </>
+                )}
+              </div>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
+        </Routes>
       </div>
-    </Router>
+      <Footer />
+    </div>
   );
 };
 
-export default App;
+// This is the new RootApp component which wraps the main App in the Router.
+// This is the file you would export in your main entry point file, e.g., index.js or main.jsx.
+export default function RootApp() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
