@@ -1,27 +1,23 @@
-import React, { useState, useEffect } from "react";
+// src/GoalForm.jsx
+import React, { useState, useEffect } from 'react';
 
-const GoalForm = ({ onSubmit, initialData = {}, onCancel, onAlert }) => {
-  // Initialize form data state, either with initialData for editing or empty for new goals.
+const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
   const [formData, setFormData] = useState({
     name: initialData.name || "",
-    targetAmount: initialData.targetAmount !== undefined ? String(initialData.targetAmount) : "",
-    savedAmount: initialData.savedAmount !== undefined ? String(initialData.savedAmount) : "",
+    target_amount: initialData.target_amount !== undefined ? String(initialData.target_amount) : "",
+    saved_amount: initialData.saved_amount !== undefined ? String(initialData.saved_amount) : "",
     category: initialData.category || "",
-    targetDate: initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "",
+    target_date: initialData.target_date ? new Date(initialData.target_date).toISOString().split('T')[0] : "",
   });
-
-  // Use an effect to update the form data when initialData changes (for editing goals)
   useEffect(() => {
     setFormData({
       name: initialData.name || "",
-      targetAmount: initialData.targetAmount !== undefined ? String(initialData.targetAmount) : "",
-      savedAmount: initialData.savedAmount !== undefined ? String(initialData.savedAmount) : "",
+      target_amount: initialData.target_amount !== undefined ? String(initialData.target_amount) : "",
+      saved_amount: initialData.saved_amount !== undefined ? String(initialData.saved_amount) : "",
       category: initialData.category || "",
-      targetDate: initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "",
+      target_date: initialData.target_date ? new Date(initialData.target_date).toISOString().split('T')[0] : "",
     });
   }, [initialData]);
-
-  // Handle changes in the form input fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -29,103 +25,59 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel, onAlert }) => {
       [name]: value,
     }));
   };
-
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const targetAmount = parseFloat(formData.targetAmount);
-    const savedAmount = parseFloat(formData.savedAmount);
-    const targetDate = formData.targetDate;
-
-    // Basic validation to ensure required fields are not empty
+    const targetAmount = parseFloat(formData.target_amount);
+    const savedAmount = parseFloat(formData.saved_amount);
     if (!formData.name.trim()) {
-      onAlert("Validation Error", "Goal Name cannot be empty.");
+      // Implement a custom modal here instead of using window.alert
+      console.error("Goal Name cannot be empty.");
       return;
     }
     if (isNaN(targetAmount) || targetAmount <= 0) {
-      onAlert("Validation Error", "Target Amount must be a positive number.");
+      // Implement a custom modal here instead of using window.alert
+      console.error("Target Amount must be a positive number.");
       return;
     }
     if (isNaN(savedAmount) || savedAmount < 0) {
-      onAlert("Validation Error", "Saved Amount must be a non-negative number.");
+      // Implement a custom modal here instead of using window.alert
+      console.error("Saved Amount must be a non-negative number.");
       return;
     }
-    if (new Date(targetDate) < new Date()) {
-        onAlert("Validation Error", "Target Date cannot be in the past.");
-        return;
+    if (savedAmount > targetAmount) {
+      // Implement a custom modal here instead of using window.alert
+      console.error("Saved Amount cannot be greater than Target Amount.");
+      return;
     }
-
-    // Call the onSubmit prop with the goal data
-    onSubmit({
+    const goalToSubmit = {
       ...formData,
-      targetAmount: targetAmount,
-      savedAmount: savedAmount || 0, // Default to 0 if savedAmount is not provided
-      targetDate: new Date(formData.targetDate).toISOString().split('T')[0],
-    });
+      target_amount: targetAmount,
+      saved_amount: savedAmount,
+    };
+    onSubmit(goalToSubmit);
   };
-
   return (
     <div className="goal-form-container">
-      <h3>{initialData.id ? "Edit Goal" : "Add New Goal"}</h3>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="name">Goal Name:</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required />
         </div>
         <div className="form-group">
-          <label htmlFor="targetAmount">Target Amount (KSh):</label>
-          <input
-            type="number"
-            id="targetAmount"
-            name="targetAmount"
-            value={formData.targetAmount}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-            required
-          />
+          <label htmlFor="target_amount">Target Amount (KSh):</label>
+          <input type="number" id="target_amount" name="target_amount" value={formData.target_amount} onChange={handleChange} min="0" step="0.01" required />
         </div>
         <div className="form-group">
-          <label htmlFor="savedAmount">Current Saved Amount (KSh):</label>
-          <input
-            type="number"
-            id="savedAmount"
-            name="savedAmount"
-            value={formData.savedAmount}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-          />
+          <label htmlFor="saved_amount">Current Saved Amount (KSh):</label>
+          <input type="number" id="saved_amount" name="saved_amount" value={formData.saved_amount} onChange={handleChange} min="0" step="0.01" />
         </div>
         <div className="form-group">
           <label htmlFor="category">Category:</label>
-          <input
-            type="text"
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" id="category" name="category" value={formData.category} onChange={handleChange} required />
         </div>
         <div className="form-group">
-          <label htmlFor="targetDate">Target Date:</label>
-          <input
-            type="date"
-            id="targetDate"
-            name="targetDate"
-            value={formData.targetDate}
-            onChange={handleChange}
-            required
-          />
+          <label htmlFor="target_date">Target Date:</label>
+          <input type="date" id="target_date" name="target_date" value={formData.target_date} onChange={handleChange} required />
         </div>
         <div className="form-actions">
           <button type="submit" className="btn-primary">

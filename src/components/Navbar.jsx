@@ -1,25 +1,22 @@
+// src/Navbar.jsx
 import React from 'react';
-import { supabase } from './supabaseClient';
-import { useAuth } from './AuthContext';
+import { Link } from 'react-router-dom';
 
-const Navbar = () => {
-  const { user } = useAuth();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
+const Navbar = ({ onLogout, onAddGoalClick }) => {
   return (
-    <nav className="bg-white shadow-md p-4 flex justify-between items-center">
-      <div className="text-2xl font-bold text-indigo-600">Smart Goals</div>
-      {user && (
-        <button
-          onClick={handleLogout}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          Logout
-        </button>
-      )}
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand">Smart Goal Planner</Link>
+      <ul className="navbar-nav">
+        <li><Link to="/" className="nav-link">Home</Link></li>
+        <li><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
+        <li><Link to="/goals" className="nav-link">Goals</Link></li>
+      </ul>
+      <button onClick={onAddGoalClick} className="btn-primary">
+        Add New Goal
+      </button>
+      <button onClick={onLogout} className="btn-secondary">
+        Logout
+      </button>
     </nav>
   );
 };

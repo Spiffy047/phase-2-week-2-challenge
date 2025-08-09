@@ -1,107 +1,55 @@
+// src/components/AuthPage.jsx
 import React, { useState } from 'react';
 
-const AuthPage = ({ onLogin, onRegister }) => {
+const AuthPage = ({ supabase, onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const handleAuth = async (email, password, isLogin) => {
+    setMessage('');
+    const { error } = isLogin
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
 
-    try {
-      if (isLogin) {
-        await onLogin(email, password);
-      } else {
-        await onRegister(email, password);
-      }
-    } catch (err) {
-      console.error(err);
-      setError(err.message.replace('Firebase: ', ''));
-    } finally {
-      setLoading(false);
+    if (error) {
+      console.error(error.message);
+      setMessage(error.message);
+    } else if (!isLogin) {
+      setMessage("Registration successful! Please check your email to confirm your account.");
+      console.log("Registration successful! Please check your email to confirm your account.");
     }
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleAuth(email, password, isLogin);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 sm:p-8">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-6 sm:p-10 border-t-8 border-indigo-600">
-        <h2 className="text-3xl font-extrabold text-center text-gray-900 mb-6">
-          {isLogin ? 'Sign In' : 'Create an Account'}
-        </h2>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-            <strong className="font-bold">Error:</strong>
-            <span className="block sm:inline ml-2">{error}</span>
-          </div>
-        )}
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email address
-            </label>
-            <div className="mt-1">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <div className="mt-1">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <span>{isLogin ? 'Sign In' : 'Register'}</span>
-              )}
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-6">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="w-full text-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            {isLogin ? "Don't have an account? Register" : "Already have an account? Sign In"}
-          </button>
+    <div className="auth-container">
+      <h2 className="text-3xl font-bold">{isLogin ? 'Login' : 'Register'}</h2>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <div className="form-group">
+          <label htmlFor="email">Email:</label>
+          <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
-      </div>
+        <div className="form-group">
+          <label htmlFor="password">Password:</label>
+          <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <button type="submit" className="btn-primary">
+          {isLogin ? 'Login' : 'Register'}
+        </button>
+      </form>
+      {message && <p className="auth-message">{message}</p>}
+      <p>
+        {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
+        <button onClick={() => {setIsLogin(!isLogin); setMessage('');}} className="text-blue-500">
+          {isLogin ? 'Register' : 'Login'}
+        </button>
+      </p>
     </div>
   );
 };
