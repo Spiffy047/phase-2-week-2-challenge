@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import Navbar from "./components/Navbar";
-import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 import AuthPage from "./components/AuthPage";
 import AuthModal from "./components/AuthModal";
@@ -23,7 +22,6 @@ function App() {
   const [goals, setGoals] = useState([]);
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
-  const [currentView, setCurrentView] = useState("landing");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -52,11 +50,9 @@ function App() {
       if (currentUser) {
         setUser(currentUser);
         setUserId(currentUser.uid);
-        setCurrentView("dashboard");
       } else {
         setUser(null);
         setUserId(null);
-        setCurrentView("landing");
       }
       setLoading(false);
     });
@@ -212,35 +208,25 @@ function App() {
         </div>
       );
     }
-
-    if (user) {
-      return (
-        <Dashboard
-          goals={goals}
-          addGoal={addGoal}
-          updateGoal={updateGoal}
-          deleteGoal={deleteGoal}
-          depositToGoal={depositToGoal}
-          userId={userId}
-          onAlert={onShowAlert}
-        />
-      );
-    }
     
-    if (currentView === "landing") {
-      return <LandingPage onSignInClick={() => setCurrentView("auth")} onSignUpClick={() => setCurrentView("auth")} />;
-    }
-    
-    if (currentView === "auth") {
-      return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
-    }
-
-    return null;
+    return user ? (
+      <Dashboard
+        goals={goals}
+        addGoal={addGoal}
+        updateGoal={updateGoal}
+        deleteGoal={deleteGoal}
+        depositToGoal={depositToGoal}
+        userId={userId}
+        onAlert={onShowAlert}
+      />
+    ) : (
+      <AuthPage onLogin={handleLogin} onRegister={handleRegister} />
+    );
   };
 
   return (
     <div className="app-container">
-      <Navbar user={user} onLogout={handleLogout} onHomeClick={() => setCurrentView("landing")} />
+      <Navbar user={user} onLogout={handleLogout} />
       <div className="main-content-wrapper">
         {renderContent()}
       </div>
