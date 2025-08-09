@@ -6,8 +6,7 @@
     "@heroicons/react": "^2.2.0",
     "cra-template-pwa": "2.0.0",
     "date-fns": "^4.1.0",
-    "firebase": "^12.1.0",
-    "json-server": "^0.17.4",
+    "@supabase/supabase-js": "^2.39.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",
@@ -19,8 +18,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "start-api": "json-server --watch db.json --port 3001"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
