@@ -1,6 +1,6 @@
 import React from 'react';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../AuthContext';
+import { supabase } from './supabaseClient';
+import { useAuth } from './AuthContext';
 
 const Navbar = () => {
   const { user } = useAuth();
