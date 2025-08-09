@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import Navbar from './components/Navbar';
@@ -25,20 +25,18 @@ const App = () => {
   const [firebaseInitError, setFirebaseInitError] = useState(null);
 
   useEffect(() => {
-    let deployedFirebaseConfig;
-    if (typeof process !== 'undefined' && process.env.VITE_FIREBASE_CONFIG) {
-        try {
-            deployedFirebaseConfig = JSON.parse(process.env.VITE_FIREBASE_CONFIG);
-        } catch (e) {
-            console.error("Failed to parse VITE_FIREBASE_CONFIG environment variable.", e);
-        }
+    // We use the global variables provided by this environment.
+    let firebaseConfig = null;
+    if (typeof __firebase_config !== 'undefined') {
+      try {
+        firebaseConfig = JSON.parse(__firebase_config);
+      } catch (e) {
+        console.error("Failed to parse __firebase_config.", e);
+      }
     }
 
-    const config = deployedFirebaseConfig;
-
-    // The app will ONLY initialize if a valid config is found from the environment variable.
-    if (config && config.projectId && config.apiKey) {
-      const app = initializeApp(config);
+    if (firebaseConfig && firebaseConfig.projectId && firebaseConfig.apiKey) {
+      const app = initializeApp(firebaseConfig);
       const firestore = getFirestore(app);
       const firebaseAuth = getAuth(app);
       setDb(firestore);
@@ -50,20 +48,28 @@ const App = () => {
           setShowAuthModal(false);
         } else {
           setUserId(null);
-          setShowAuthModal(true);
-          try {
-            await signInAnonymously(firebaseAuth);
-          } catch (error) {
-            console.error("Error during anonymous authentication:", error);
+          // Use signInWithCustomToken if the global token is available, otherwise sign in anonymously
+          if (typeof __initial_auth_token !== 'undefined') {
+            try {
+              await signInWithCustomToken(firebaseAuth, __initial_auth_token);
+            } catch (error) {
+              console.error("Error signing in with custom token:", error);
+            }
+          } else {
+            try {
+              await signInAnonymously(firebaseAuth);
+            } catch (error) {
+              console.error("Error during anonymous authentication:", error);
+            }
           }
         }
         setIsAuthReady(true);
       });
       return () => unsubscribeAuth();
     } else {
-      console.error("Firebase config is missing. Please provide your configuration via VITE_FIREBASE_CONFIG environment variable.");
-      setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the VITE_FIREBASE_CONFIG environment variable is set correctly on your hosting provider.");
-      setIsAuthReady(true); // Still set to true to show an error message.
+      console.error("Firebase config is missing or invalid.");
+      setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the environment is configured correctly.");
+      setIsAuthReady(true);
     }
   }, []);
 
@@ -83,19 +89,7 @@ const App = () => {
   }, [isAuthReady, db, userId]);
 
   const handleAuthSubmit = async (email, password, mode) => {
-    if (auth) {
-      try {
-        if (mode === 'signup') {
-          await createUserWithEmailAndPassword(auth, email, password);
-        } else {
-          await signInWithEmailAndPassword(auth, email, password);
-        }
-        setShowAuthModal(false);
-      } catch (error) {
-        console.error("Authentication error:", error);
-        // Implement custom modal for error messages
-      }
-    }
+    // This functionality is not used with the provided authentication method
   };
 
   const handleLogout = async () => {
@@ -103,7 +97,7 @@ const App = () => {
       try {
         await signOut(auth);
         setGoals([]);
-        setShowAuthModal(true);
+        setUserId(null);
       } catch (error) {
         console.error("Logout error:", error);
       }
