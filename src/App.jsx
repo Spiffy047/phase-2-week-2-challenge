@@ -31,8 +31,27 @@ function App() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Function to show custom alert modal
+  const onShowAlert = (title, message, onConfirm = null, onCancel = null) => {
+    setModalContent({ title, message, onConfirm, onCancel });
+    setIsModalOpen(true);
+  };
+
+  // Function to close custom alert modal
+  const onHandleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalContent({ title: "", message: "", onConfirm: null, onCancel: null });
+  };
+  
   // Set up auth state listener and sign in with custom token
   useEffect(() => {
+    // Check if auth is defined before attempting any auth operations
+    if (!auth) {
+      console.warn("Firebase authentication is not available. Skipping auth setup.");
+      setLoading(false);
+      return;
+    }
+
     const signInUser = async () => {
       try {
         if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
@@ -57,48 +76,41 @@ function App() {
       setLoading(false);
     });
     
-    // Check if the auth instance is ready before attempting sign in
-    if (auth) {
-        signInUser();
-    }
+    signInUser();
 
     return () => unsubscribe(); // Cleanup the listener
   }, []);
 
   // Fetch goals when user is authenticated
   useEffect(() => {
-    if (userId) {
-      const goalsCollectionRef = collection(db, "artifacts", appId, "users", userId, "goals");
-      const q = query(goalsCollectionRef);
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const goalsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setGoals(goalsData);
-      }, (error) => {
-        console.error("Error fetching goals:", error);
-        onShowAlert("Error", "Failed to fetch goals. Please try again.");
-      });
-
-      return () => unsubscribe();
-    } else {
+    // Check if db and userId are defined before attempting to fetch goals
+    if (!db || !userId) {
       setGoals([]);
+      return;
     }
+
+    const goalsCollectionRef = collection(db, "artifacts", appId, "users", userId, "goals");
+    const q = query(goalsCollectionRef);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const goalsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setGoals(goalsData);
+    }, (error) => {
+      console.error("Error fetching goals:", error);
+      onShowAlert("Error", "Failed to fetch goals. Please try again.");
+    });
+
+    return () => unsubscribe();
   }, [userId]);
 
-  const onShowAlert = (title, message, onConfirm = null, onCancel = null) => {
-    setModalContent({ title, message, onConfirm, onCancel });
-    setIsModalOpen(true);
-  };
-
-  const onHandleCloseModal = () => {
-    setIsModalOpen(false);
-    setModalContent({ title: "", message: "", onConfirm: null, onCancel: null });
-  };
-
   const handleLogin = async (email, password) => {
+    if (!auth) {
+      onShowAlert("Error", "Firebase services are not available.");
+      return;
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
       onShowAlert("Success", "Logged in successfully!");
@@ -108,6 +120,10 @@ function App() {
   };
 
   const handleRegister = async (email, password) => {
+    if (!auth) {
+      onShowAlert("Error", "Firebase services are not available.");
+      return;
+    }
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       onShowAlert("Success", "Account created successfully!");
@@ -117,6 +133,10 @@ function App() {
   };
 
   const handleLogout = async () => {
+    if (!auth) {
+      onShowAlert("Error", "Firebase services are not available.");
+      return;
+    }
     try {
       await signOut(auth);
       onShowAlert("Signed Out", "You have been logged out.");
@@ -128,75 +148,75 @@ function App() {
 
   // CRUD Operations
   const addGoal = async (goalData) => {
-    if (userId) {
-      try {
-        const goalsCollectionRef = collection(db, "artifacts", appId, "users", userId, "goals");
-        await setDoc(doc(goalsCollectionRef), {
-          ...goalData,
-          savedAmount: parseFloat(goalData.savedAmount) || 0,
-          targetAmount: parseFloat(goalData.targetAmount),
-        });
-        onShowAlert("Success", `Goal "${goalData.name}" added successfully.`);
-      } catch (e) {
-        console.error("Error adding document: ", e);
-        onShowAlert("Error", "Failed to add goal. Please try again.");
-      }
-    } else {
+    if (!db || !userId) {
       onShowAlert("Error", "You must be signed in to add goals.");
+      return;
+    }
+    try {
+      const goalsCollectionRef = collection(db, "artifacts", appId, "users", userId, "goals");
+      await setDoc(doc(goalsCollectionRef), {
+        ...goalData,
+        savedAmount: parseFloat(goalData.savedAmount) || 0,
+        targetAmount: parseFloat(goalData.targetAmount),
+      });
+      onShowAlert("Success", `Goal "${goalData.name}" added successfully.`);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      onShowAlert("Error", "Failed to add goal. Please try again.");
     }
   };
 
   const updateGoal = async (id, updatedGoalData) => {
-    if (userId) {
-      try {
-        const goalDocRef = doc(db, "artifacts", appId, "users", userId, "goals", id);
-        await updateDoc(goalDocRef, {
-          ...updatedGoalData,
-          savedAmount: parseFloat(updatedGoalData.savedAmount),
-          targetAmount: parseFloat(updatedGoalData.targetAmount),
-        });
-        onShowAlert("Success", "Goal updated successfully.");
-      } catch (e) {
-        console.error("Error updating document: ", e);
-        onShowAlert("Error", "Failed to update goal. Please try again.");
-      }
-    } else {
+    if (!db || !userId) {
       onShowAlert("Error", "You must be signed in to update goals.");
+      return;
+    }
+    try {
+      const goalDocRef = doc(db, "artifacts", appId, "users", userId, "goals", id);
+      await updateDoc(goalDocRef, {
+        ...updatedGoalData,
+        savedAmount: parseFloat(updatedGoalData.savedAmount),
+        targetAmount: parseFloat(updatedGoalData.targetAmount),
+      });
+      onShowAlert("Success", "Goal updated successfully.");
+    } catch (e) {
+      console.error("Error updating document: ", e);
+      onShowAlert("Error", "Failed to update goal. Please try again.");
     }
   };
 
   const deleteGoal = async (id) => {
-    if (userId) {
-      try {
-        await deleteDoc(doc(db, "artifacts", appId, "users", userId, "goals", id));
-        onShowAlert("Success", "Goal deleted successfully.");
-      } catch (e) {
-        console.error("Error deleting document: ", e);
-        onShowAlert("Error", "Failed to delete goal. Please try again.");
-      }
-    } else {
+    if (!db || !userId) {
       onShowAlert("Error", "You must be signed in to delete goals.");
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, "artifacts", appId, "users", userId, "goals", id));
+      onShowAlert("Success", "Goal deleted successfully.");
+    } catch (e) {
+      console.error("Error deleting document: ", e);
+      onShowAlert("Error", "Failed to delete goal. Please try again.");
     }
   };
 
   const depositToGoal = async (id, amount) => {
-    if (userId) {
-      try {
-        const goalDocRef = doc(db, "artifacts", appId, "users", userId, "goals", id);
-        const goalDocSnap = await getDoc(goalDocRef);
-
-        if (goalDocSnap.exists()) {
-          const currentSavedAmount = parseFloat(goalDocSnap.data().savedAmount);
-          const newSavedAmount = currentSavedAmount + parseFloat(amount);
-          await updateDoc(goalDocRef, { savedAmount: newSavedAmount });
-          onShowAlert("Success", `KSh ${amount} deposited to goal.`);
-        }
-      } catch (e) {
-        console.error("Error making deposit: ", e);
-        onShowAlert("Error", "Failed to deposit. Please try again.");
-      }
-    } else {
+    if (!db || !userId) {
       onShowAlert("Error", "You must be signed in to make a deposit.");
+      return;
+    }
+    try {
+      const goalDocRef = doc(db, "artifacts", appId, "users", userId, "goals", id);
+      const goalDocSnap = await getDoc(goalDocRef);
+
+      if (goalDocSnap.exists()) {
+        const currentSavedAmount = parseFloat(goalDocSnap.data().savedAmount);
+        const newSavedAmount = currentSavedAmount + parseFloat(amount);
+        await updateDoc(goalDocRef, { savedAmount: newSavedAmount });
+        onShowAlert("Success", `KSh ${amount} deposited to goal.`);
+      }
+    } catch (e) {
+      console.error("Error making deposit: ", e);
+      onShowAlert("Error", "Failed to deposit. Please try again.");
     }
   };
 
