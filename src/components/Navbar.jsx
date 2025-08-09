@@ -1,15 +1,13 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom'; 
 
-const Navbar = ({ onAddGoalClick }) => {
+const Navbar = ({ onAddGoalClick, onViewDashboardClick }) => {
   return (
     <nav className="navbar">
-      <Link to="/" className="navbar-brand">Smart Goal Planner</Link> 
+      <div onClick={onViewDashboardClick} className="navbar-brand">Smart Goal Planner</div>
       <ul className="navbar-nav"> 
-        <li><Link to="/" className="nav-link">Home</Link></li>
-        <li><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
-        <li><Link to="/goals" className="nav-link">Goals</Link></li>
+        <li><button onClick={onViewDashboardClick} className="nav-link">Home</button></li>
+        <li><button onClick={onViewDashboardClick} className="nav-link">Dashboard</button></li>
+        <li><button onClick={onViewDashboardClick} className="nav-link">Goals</button></li>
       </ul>
       <button onClick={onAddGoalClick} className="btn-primary">
         Add New Goal

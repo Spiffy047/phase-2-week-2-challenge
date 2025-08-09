@@ -139,10 +139,16 @@ const App = () => {
     setShowGoalForm(false);
     setEditingGoal(null);
   };
+  
+  // This function will be passed to the Navbar to reset the view to the dashboard.
+  const handleViewDashboardClick = () => {
+    setShowGoalForm(false);
+    setEditingGoal(null);
+  };
 
   return (
     <div className="app-container">
-      <Navbar onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }} />
+      <Navbar onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }} onViewDashboardClick={handleViewDashboardClick} />
 
       <main className="main-content-wrapper">
         {showGoalForm ? (
@@ -193,3 +199,4 @@ const App = () => {
 };
 
 export default App;
+c
