@@ -95,6 +95,7 @@ const App = () => {
 
   useEffect(() => {
     if (isAuthReady && db && userId) {
+      // Fix for the build error: check if __app_id is defined
       const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
       const goalsColRef = collection(db, 'artifacts', currentAppId, 'users', userId, 'goals');
       const unsubscribe = onSnapshot(goalsColRef, (snapshot) => {
@@ -156,7 +157,8 @@ const App = () => {
   const handleAddGoal = async (newGoal) => {
     if (db && userId) {
       try {
-        const goalsColRef = collection(db, 'artifacts', 'default-app-id', 'users', userId, 'goals');
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const goalsColRef = collection(db, 'artifacts', currentAppId, 'users', userId, 'goals');
         await addDoc(goalsColRef, newGoal);
         setShowGoalForm(false);
       } catch (error) {
@@ -168,7 +170,8 @@ const App = () => {
   const handleUpdateGoal = async (updatedGoal) => {
     if (db && userId && updatedGoal.id) {
       try {
-        const goalDocRef = doc(db, 'artifacts', 'default-app-id', 'users', userId, 'goals', updatedGoal.id);
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const goalDocRef = doc(db, 'artifacts', currentAppId, 'users', userId, 'goals', updatedGoal.id);
         await setDoc(goalDocRef, updatedGoal);
         setShowGoalForm(false);
         setEditingGoal(null);
@@ -181,7 +184,8 @@ const App = () => {
   const handleDeleteGoal = async () => {
     if (db && userId && goalToDelete) {
       try {
-        const goalDocRef = doc(db, 'artifacts', 'default-app-id', 'users', userId, 'goals', goalToDelete.id);
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const goalDocRef = doc(db, 'artifacts', currentAppId, 'users', userId, 'goals', goalToDelete.id);
         await deleteDoc(goalDocRef);
         setShowDeleteModal(false);
         setGoalToDelete(null);
@@ -197,7 +201,8 @@ const App = () => {
         const goalToUpdate = goals.find(goal => goal.id === goalId);
         if (goalToUpdate) {
           const newSavedAmount = Number(goalToUpdate.savedAmount) + Number(amount);
-          const goalDocRef = doc(db, 'artifacts', 'default-app-id', 'users', userId, 'goals', goalId);
+          const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+          const goalDocRef = doc(db, 'artifacts', currentAppId, 'users', userId, 'goals', goalId);
           await setDoc(goalDocRef, { ...goalToUpdate, savedAmount: newSavedAmount });
         }
       } catch (error) {
