@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import Navbar from "./components/Navbar";
+import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 import AuthPage from "./components/AuthPage";
+import AuthModal from "./components/AuthModal";
+import Footer from "./components/Footer";
 import { auth, db, appId } from "./components/firebaseConfig";
 import { onAuthStateChanged, signInWithCustomToken, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import {
@@ -14,88 +17,89 @@ import {
   deleteDoc,
   getDoc,
   updateDoc,
-  addDoc,
 } from "firebase/firestore";
-
-// A custom modal component to display alerts, to avoid using window.alert
-const AlertModal = ({ title, message, onClose }) => {
-  if (!message) return null;
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h4>{title}</h4>
-        <p>{message}</p>
-        <button onClick={onClose} className="btn-primary">
-          OK
-        </button>
-      </div>
-    </div>
-  );
-};
 
 function App() {
   const [goals, setGoals] = useState([]);
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [currentView, setCurrentView] = useState("landing");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
     message: "",
+    onConfirm: null,
+    onCancel: null,
   });
   const [loading, setLoading] = useState(true);
 
-  // Sign in with custom token or anonymously
+  // Set up auth state listener and sign in with custom token
   useEffect(() => {
-    const signInWithToken = async () => {
+    const signInUser = async () => {
       try {
-        const initialAuthToken = typeof __initial_auth_token !== "undefined" ? __initial_auth_token : null;
-        if (initialAuthToken) {
-          await signInWithCustomToken(auth, initialAuthToken);
+        if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
         } else {
           await signInAnonymously(auth);
         }
       } catch (error) {
         console.error("Error signing in with custom token:", error);
+        onShowAlert("Error", error.message);
       }
     };
-    signInWithToken();
-  }, []);
 
-  // Listen for authentication state changes and fetch goals
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setUserId(currentUser ? currentUser.uid : null);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        const userId = currentUser.uid;
-        // Start listening for goal data
-        const goalsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/goals`);
-        const unsubscribeGoals = onSnapshot(goalsCollectionRef, (snapshot) => {
-          const fetchedGoals = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setGoals(fetchedGoals);
-          setLoading(false);
-        });
-        return () => unsubscribeGoals(); // Cleanup goals listener
+        setUser(currentUser);
+        setUserId(currentUser.uid);
+        setCurrentView("dashboard");
       } else {
-        setGoals([]); // Clear goals if no user is logged in
-        setLoading(false);
+        setUser(null);
+        setUserId(null);
+        setCurrentView("landing");
       }
       setLoading(false);
     });
-    return () => unsubscribeAuth(); // Cleanup auth listener
+    
+    // Check if the auth instance is ready before attempting sign in
+    if (auth) {
+        signInUser();
+    }
+
+    return () => unsubscribe(); // Cleanup the listener
   }, []);
 
-  const onShowAlert = (title, message) => {
-    setModalContent({ title, message });
+  // Fetch goals when user is authenticated
+  useEffect(() => {
+    if (userId) {
+      const goalsCollectionRef = collection(db, "artifacts", appId, "users", userId, "goals");
+      const q = query(goalsCollectionRef);
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const goalsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setGoals(goalsData);
+      }, (error) => {
+        console.error("Error fetching goals:", error);
+        onShowAlert("Error", "Failed to fetch goals. Please try again.");
+      });
+
+      return () => unsubscribe();
+    } else {
+      setGoals([]);
+    }
+  }, [userId]);
+
+  const onShowAlert = (title, message, onConfirm = null, onCancel = null) => {
+    setModalContent({ title, message, onConfirm, onCancel });
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const onHandleCloseModal = () => {
     setIsModalOpen(false);
-    setModalContent({ title: "", message: "" });
+    setModalContent({ title: "", message: "", onConfirm: null, onCancel: null });
   };
 
   const handleLogin = async (email, password) => {
@@ -126,63 +130,77 @@ function App() {
     }
   };
 
-  const addGoal = async (newGoal) => {
-    try {
-      if (userId) {
-        await addDoc(collection(db, `artifacts/${appId}/users/${userId}/goals`), newGoal);
-        onShowAlert("Success", `Goal "${newGoal.name}" added successfully.`);
+  // CRUD Operations
+  const addGoal = async (goalData) => {
+    if (userId) {
+      try {
+        const goalsCollectionRef = collection(db, "artifacts", appId, "users", userId, "goals");
+        await setDoc(doc(goalsCollectionRef), {
+          ...goalData,
+          savedAmount: parseFloat(goalData.savedAmount) || 0,
+          targetAmount: parseFloat(goalData.targetAmount),
+        });
+        onShowAlert("Success", `Goal "${goalData.name}" added successfully.`);
+      } catch (e) {
+        console.error("Error adding document: ", e);
+        onShowAlert("Error", "Failed to add goal. Please try again.");
       }
-    } catch (error) {
-      console.error("Error adding goal:", error);
-      onShowAlert("Error", "Failed to add new goal.");
+    } else {
+      onShowAlert("Error", "You must be signed in to add goals.");
     }
   };
 
-  const updateGoal = async (id, updatedGoal) => {
-    try {
-      if (userId) {
-        const goalDocRef = doc(db, `artifacts/${appId}/users/${userId}/goals`, id);
-        await updateDoc(goalDocRef, updatedGoal);
-        onShowAlert("Success", `Goal "${updatedGoal.name}" updated successfully.`);
+  const updateGoal = async (id, updatedGoalData) => {
+    if (userId) {
+      try {
+        const goalDocRef = doc(db, "artifacts", appId, "users", userId, "goals", id);
+        await updateDoc(goalDocRef, {
+          ...updatedGoalData,
+          savedAmount: parseFloat(updatedGoalData.savedAmount),
+          targetAmount: parseFloat(updatedGoalData.targetAmount),
+        });
+        onShowAlert("Success", "Goal updated successfully.");
+      } catch (e) {
+        console.error("Error updating document: ", e);
+        onShowAlert("Error", "Failed to update goal. Please try again.");
       }
-    } catch (error) {
-      console.error("Error updating goal:", error);
-      onShowAlert("Error", "Failed to update goal.");
+    } else {
+      onShowAlert("Error", "You must be signed in to update goals.");
     }
   };
 
-  const deleteGoal = async (id, name) => {
-    try {
-      if (userId) {
-        const goalDocRef = doc(db, `artifacts/${appId}/users/${userId}/goals`, id);
-        await deleteDoc(goalDocRef);
-        onShowAlert("Success", `Goal "${name}" deleted successfully.`);
+  const deleteGoal = async (id) => {
+    if (userId) {
+      try {
+        await deleteDoc(doc(db, "artifacts", appId, "users", userId, "goals", id));
+        onShowAlert("Success", "Goal deleted successfully.");
+      } catch (e) {
+        console.error("Error deleting document: ", e);
+        onShowAlert("Error", "Failed to delete goal. Please try again.");
       }
-    } catch (error) {
-      console.error("Error deleting goal:", error);
-      onShowAlert("Error", "Failed to delete goal.");
+    } else {
+      onShowAlert("Error", "You must be signed in to delete goals.");
     }
   };
 
-  const depositToGoal = async (goalId, amount) => {
-    try {
-      if (userId) {
-        const goalDocRef = doc(db, `artifacts/${appId}/users/${userId}/goals`, goalId);
-        const goalDoc = await getDoc(goalDocRef);
-        if (goalDoc.exists()) {
-          const currentData = goalDoc.data();
-          const updatedSavedAmount = (Number(currentData.savedAmount) || 0) + amount;
-          await updateDoc(goalDocRef, {
-            savedAmount: updatedSavedAmount,
-          });
+  const depositToGoal = async (id, amount) => {
+    if (userId) {
+      try {
+        const goalDocRef = doc(db, "artifacts", appId, "users", userId, "goals", id);
+        const goalDocSnap = await getDoc(goalDocRef);
+
+        if (goalDocSnap.exists()) {
+          const currentSavedAmount = parseFloat(goalDocSnap.data().savedAmount);
+          const newSavedAmount = currentSavedAmount + parseFloat(amount);
+          await updateDoc(goalDocRef, { savedAmount: newSavedAmount });
           onShowAlert("Success", `KSh ${amount} deposited to goal.`);
-        } else {
-          onShowAlert("Error", "Goal not found.");
         }
+      } catch (e) {
+        console.error("Error making deposit: ", e);
+        onShowAlert("Error", "Failed to deposit. Please try again.");
       }
-    } catch (error) {
-      console.error("Error making deposit:", error);
-      onShowAlert("Error", "Failed to make deposit.");
+    } else {
+      onShowAlert("Error", "You must be signed in to make a deposit.");
     }
   };
 
@@ -194,6 +212,7 @@ function App() {
         </div>
       );
     }
+
     if (user) {
       return (
         <Dashboard
@@ -207,20 +226,34 @@ function App() {
         />
       );
     }
-    return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+    
+    if (currentView === "landing") {
+      return <LandingPage onSignInClick={() => setCurrentView("auth")} onSignUpClick={() => setCurrentView("auth")} />;
+    }
+    
+    if (currentView === "auth") {
+      return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+    }
+
+    return null;
   };
 
   return (
     <div className="app-container">
-      <Navbar user={user} onLogout={handleLogout} />
-      <main className="main-content-wrapper">
+      <Navbar user={user} onLogout={handleLogout} onHomeClick={() => setCurrentView("landing")} />
+      <div className="main-content-wrapper">
         {renderContent()}
-      </main>
-      <AlertModal
-        title={modalContent.title}
-        message={modalContent.message}
-        onClose={handleCloseModal}
-      />
+      </div>
+      {isModalOpen && (
+        <AuthModal
+          title={modalContent.title}
+          message={modalContent.message}
+          onClose={onHandleCloseModal}
+          onConfirm={modalContent.onConfirm}
+          onCancel={modalContent.onCancel}
+        />
+      )}
+      <Footer />
     </div>
   );
 }

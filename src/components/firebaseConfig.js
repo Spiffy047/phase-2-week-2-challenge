@@ -1,25 +1,15 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInWithCustomToken, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// IMPORTANT: The following variables are automatically provided in the Canvas environment.
-// For local development, you should replace the placeholder with your own Firebase project configuration.
+// IMPORTANT: These variables are provided by the hosting environment. Do not modify.
 const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+const firebaseConfigFromEnv = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : null;
 
-// Your web app's Firebase configuration.
-// Replace these with the configuration for your specific project.
-const firebaseConfig = {
-    apiKey: "AIzaSyDzoILYwextDqGj1gkLmzVMFpvIRVC04lk",
-    authDomain: "smart-5321a.firebaseapp.com",
-    projectId: "smart-5321a",
-    storageBucket: "smart-5321a.firebasestorage.app",
-    messagingSenderId: "401027865806",
-    appId: "1:401027865806:web:36af1f89c71e1cf84b449f",
-    measurementId: "G-JWY4SD5THE"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// The app will now use the configuration from the environment.
+// This is the secure way to handle secrets and prevents them from being exposed on GitHub.
+// For local development, you will need to manually provide a firebaseConfig object.
+const app = initializeApp(firebaseConfigFromEnv);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
