@@ -20,10 +20,14 @@ const App = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
 
+  // Declare variables to satisfy the linter
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+  const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
   useEffect(() => {
     // Initialize Firebase
-    if (typeof __firebase_config !== 'undefined' && JSON.parse(__firebase_config).projectId) {
-      const firebaseConfig = JSON.parse(__firebase_config);
+    if (firebaseConfig && firebaseConfig.projectId) {
       const app = initializeApp(firebaseConfig);
       const firestore = getFirestore(app);
       const firebaseAuth = getAuth(app);
@@ -35,8 +39,8 @@ const App = () => {
           setUserId(user.uid);
         } else {
           try {
-            if (typeof __initial_auth_token !== 'undefined') {
-              await signInWithCustomToken(firebaseAuth, __initial_auth_token);
+            if (initialAuthToken) {
+              await signInWithCustomToken(firebaseAuth, initialAuthToken);
             } else {
               await signInAnonymously(firebaseAuth);
             }
@@ -47,11 +51,10 @@ const App = () => {
         setIsAuthReady(true);
       });
     }
-  }, []);
+  }, [firebaseConfig, initialAuthToken]);
 
   useEffect(() => {
     if (isAuthReady && db && userId) {
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
       const goalsColRef = collection(db, 'artifacts', appId, 'users', userId, 'goals');
       const unsubscribe = onSnapshot(goalsColRef, (snapshot) => {
         const goalsData = snapshot.docs.map(doc => ({
@@ -63,13 +66,12 @@ const App = () => {
 
       return () => unsubscribe();
     }
-  }, [isAuthReady, db, userId]);
+  }, [isAuthReady, db, userId, appId]);
 
   // Function to add a new goal
   const handleAddGoal = async (newGoal) => {
     if (db && userId) {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const goalsColRef = collection(db, 'artifacts', appId, 'users', userId, 'goals');
         await addDoc(goalsColRef, newGoal);
         setShowGoalForm(false);
@@ -83,7 +85,6 @@ const App = () => {
   const handleUpdateGoal = async (updatedGoal) => {
     if (db && userId && updatedGoal.id) {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', updatedGoal.id);
         await setDoc(goalDocRef, updatedGoal);
         setShowGoalForm(false);
@@ -98,7 +99,6 @@ const App = () => {
   const handleDeleteGoal = async () => {
     if (db && userId && goalToDelete) {
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', goalToDelete.id);
         await deleteDoc(goalDocRef);
         setShowDeleteModal(false);
@@ -116,7 +116,6 @@ const App = () => {
         const goalToUpdate = goals.find(goal => goal.id === goalId);
         if (goalToUpdate) {
           const newSavedAmount = Number(goalToUpdate.savedAmount) + Number(amount);
-          const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
           const goalDocRef = doc(db, 'artifacts', appId, 'users', userId, 'goals', goalId);
           await setDoc(goalDocRef, { ...goalToUpdate, savedAmount: newSavedAmount });
         }
