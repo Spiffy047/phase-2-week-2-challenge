@@ -3,11 +3,11 @@ import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken }
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeApp } from 'firebase/app';
-import Navbar from './Navbar';
-import Dashboard from './Dashboard';
-import GoalCard from './GoalCard';
-import GoalForm from './GoalForm';
-import Footer from './Footer';
+import Navbar from './components/Navbar';
+import Dashboard from './components/Dashboard';
+import GoalCard from './components/GoalCard';
+import GoalForm from './components/GoalForm';
+import Footer from './components/Footer';
 import './App.css'; // Import the main stylesheet
 
 const __app_id = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
