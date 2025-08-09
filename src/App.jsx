@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AuthPage from './AuthPage';
-import Dashboard from './Dashboard';
-import Navbar from './Navbar';
-import Footer from './Footer';
-import firebaseApp from './firebaseConfig';
+import AuthPage from './components/AuthPage';
+import Dashboard from './components/Dashboard';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import firebaseApp from './components/firebaseConfig';
 import './App.css';
 
 // New helper function to get the Firebase ID token
