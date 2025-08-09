@@ -22,10 +22,11 @@ const App = () => {
   const [goalToDelete, setGoalToDelete] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [firebaseInitError, setFirebaseInitError] = useState(null);
 
   useEffect(() => {
     // Replace with your actual Firebase config object
-    const firebaseConfig = {
+    const hardcodedFirebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_AUTH_DOMAIN",
       projectId: "YOUR_PROJECT_ID",
@@ -43,8 +44,11 @@ const App = () => {
         }
     }
 
-    if (firebaseConfig.projectId && firebaseConfig.apiKey) {
-      const app = initializeApp(deployedFirebaseConfig || firebaseConfig);
+    const config = deployedFirebaseConfig || hardcodedFirebaseConfig;
+
+    // Only proceed if a valid config is found and it doesn't contain placeholders.
+    if (config && config.projectId && config.apiKey && config.apiKey !== "YOUR_API_KEY") {
+      const app = initializeApp(config);
       const firestore = getFirestore(app);
       const firebaseAuth = getAuth(app);
       setDb(firestore);
@@ -58,8 +62,6 @@ const App = () => {
           setUserId(null);
           setShowAuthModal(true);
           try {
-            // For deployed apps, anonymous sign-in might not be required if auth modal is shown
-            // It's still good practice to have as a fallback.
             await signInAnonymously(firebaseAuth);
           } catch (error) {
             console.error("Error during anonymous authentication:", error);
@@ -69,8 +71,9 @@ const App = () => {
       });
       return () => unsubscribeAuth();
     } else {
-      console.error("Firebase config is missing. Please provide your configuration.");
-      setIsAuthReady(true); // Still set to true to show an error message instead of loading.
+      console.error("Firebase config is missing or invalid. Please provide your configuration.");
+      setFirebaseInitError("Firebase configuration is missing or invalid. Please check your environment variables or hardcoded values.");
+      setIsAuthReady(true); // Still set to true to show an error message.
     }
   }, []);
 
@@ -191,6 +194,14 @@ const App = () => {
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin"></div>
         <p className="text-gray-600 font-semibold text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  if (firebaseInitError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <p className="text-red-500 font-semibold text-lg text-center p-4">{firebaseInitError}</p>
       </div>
     );
   }
