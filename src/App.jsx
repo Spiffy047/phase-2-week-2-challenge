@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import './App.css'
 // Use this URL for your deployed backend
 const API_BASE_URL = 'https://smart-goal-planner-xzdh.onrender.com'; // IMPORTANT: Change this to your new Render backend URL
 
