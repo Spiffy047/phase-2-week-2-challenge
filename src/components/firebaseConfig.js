@@ -1,16 +1,27 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithCustomToken, signInAnonymously } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // IMPORTANT: These variables are provided by the hosting environment. Do not modify.
 const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
-const firebaseConfigFromEnv = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : null;
+const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : {};
 
-// The app will now use the configuration from the environment.
-// This is the secure way to handle secrets and prevents them from being exposed on GitHub.
-// For local development, you will need to manually provide a firebaseConfig object.
-const app = initializeApp(firebaseConfigFromEnv);
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app;
+let auth;
+let db;
+
+// Only initialize Firebase if the config object is not empty
+if (Object.keys(firebaseConfig).length > 0) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (error) {
+    console.error("Failed to initialize Firebase:", error);
+    // These variables will remain undefined
+  }
+} else {
+  console.warn("Firebase configuration is missing or empty. The app will run without Firebase services. Please ensure the hosting environment provides the __firebase_config variable.");
+}
 
 export { app, auth, db, appId };
