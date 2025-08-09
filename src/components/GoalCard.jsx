@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 
-const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
+const GoalCard = ({ goal, onUpdate, onDelete, onDeposit, onAlert }) => {
   const [depositAmount, setDepositAmount] = useState("");
   const [showDepositInput, setShowDepositInput] = useState(false);
 
@@ -12,15 +11,12 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
   const progress = (savedAmountNum / targetAmountNum) * 100;
   const isCompleted = savedAmountNum >= targetAmountNum;
 
- 
   const targetDateObj = new Date(goal.targetDate);
   const now = new Date();
-  const diffTime = targetDateObj.getTime() - now.getTime(); 
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  const diffTime = targetDateObj.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  
   const isWarning = diffDays <= 30 && diffDays > 0 && !isCompleted;
- 
   const isOverdue = targetDateObj < now && !isCompleted;
 
   const handleDepositChange = (e) => {
@@ -34,14 +30,14 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
       setDepositAmount("");
       setShowDepositInput(false);
     } else {
-      alert("Please enter a valid deposit amount.");
+      onAlert("Invalid Deposit", "Please enter a valid deposit amount greater than zero.");
     }
   };
 
   const getStatusText = () => {
     if (isCompleted) return "Completed!";
-    if (isOverdue) return "Overdue!";
-    if (isWarning) return "Close to Deadline!"; 
+    if (isOverdue) return "Past Due";
+    if (isWarning) return "On Track (Warning)";
     return "On Track";
   };
 
@@ -52,51 +48,32 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
     return "status-on-track";
   };
 
-  
   const getTimeRemainingText = () => {
-    if (isCompleted) return "Goal Completed!";
-    if (isOverdue) return "Deadline Passed!";
-    if (!goal.targetDate) return "No deadline set."; 
-
-    
-    if (diffDays === 0) return "Due Today!";
-    if (diffDays === 1) return "1 day left!";
-    if (diffDays > 0 && diffDays <= 30) return `${diffDays} days left - Urgent!`;
-    if (diffDays > 30 && diffDays < 365) return `${diffDays} days left`; 
-    if (diffDays >= 365) {
-      const years = Math.floor(diffDays / 365);
-      const remainingDays = diffDays % 365;
-      return `${years} year${years > 1 ? 's' : ''}, ${remainingDays} day${remainingDays > 1 ? 's' : ''} left`;
+    if (isCompleted) {
+      return "Goal achieved!";
     }
-    return ""; 
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+    }
+    return "Past due";
   };
 
-
   return (
-    <div className="goal-card">
-      <h4>{goal.name}</h4>
-      <p>
-        Target: <span className="currency-amount">KSh {targetAmountNum.toFixed(2)}</span>
-      </p>
-      <p>
-        Saved: <span className="currency-amount">KSh {savedAmountNum.toFixed(2)}</span>
-      </p>
-      <p>
-        Remaining: <span className="currency-amount">KSh {remainingAmount.toFixed(2)}</span> 
-      </p>
-      <p>
-        Category: **{goal.category || "N/A"}** 
-      </p>
-      <p>
-        Target Date: {
-          goal.targetDate
-            ? new Date(goal.targetDate).toLocaleDateString("en-KE", {
-                year: 'numeric', month: 'long', day: 'numeric'
-              })
-            : 'N/A'
+    <div className={`goal-card ${getStatusClass()}`}>
+      <h3>{goal.name}</h3>
+      <p className="goal-category">Category: {goal.category}</p>
+      <p>Target: KSh {Number(goal.targetAmount).toFixed(2)}</p>
+      <p>Saved: KSh {Number(goal.savedAmount).toFixed(2)}</p>
+      <p className="text-sm font-bold">Remaining: KSh {remainingAmount.toFixed(2)}</p>
+      <p>Target Date: {
+          new Date(goal.targetDate).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+          })
         }
       </p>
-      <p>Time Left: **{getTimeRemainingText()}**</p> 
+      <p>Time Left: **{getTimeRemainingText()}**</p>
 
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${Math.min(100, isNaN(progress) ? 0 : progress)}%` }}></div>
@@ -130,7 +107,7 @@ const GoalCard = ({ goal, onUpdate, onDelete, onDeposit }) => {
         <button className="btn-secondary" onClick={() => onUpdate(goal.id)}>
           Edit
         </button>
-        <button className="btn-danger" onClick={() => onDelete(goal.id)}>
+        <button className="btn-danger" onClick={() => onDelete(goal.id, goal.name)}>
           Delete
         </button>
       </div>

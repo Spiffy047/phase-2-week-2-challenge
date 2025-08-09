@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 
-const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
+const GoalForm = ({ onSubmit, initialData = {}, onCancel, onAlert }) => {
   const [formData, setFormData] = useState({
     name: initialData.name || "",
     targetAmount: initialData.targetAmount !== undefined ? String(initialData.targetAmount) : "",
     savedAmount: initialData.savedAmount !== undefined ? String(initialData.savedAmount) : "",
-    category: initialData.category || "", 
+    category: initialData.category || "",
     targetDate: initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "",
   });
 
@@ -15,7 +14,7 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
       name: initialData.name || "",
       targetAmount: initialData.targetAmount !== undefined ? String(initialData.targetAmount) : "",
       savedAmount: initialData.savedAmount !== undefined ? String(initialData.savedAmount) : "",
-      category: initialData.category || "", 
+      category: initialData.category || "",
       targetDate: initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "",
     });
   }, [initialData]);
@@ -35,44 +34,34 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
     const savedAmount = parseFloat(formData.savedAmount);
 
     if (!formData.name.trim()) {
-      alert("Goal Name cannot be empty.");
+      onAlert("Validation Error", "Goal Name cannot be empty.");
       return;
     }
     if (isNaN(targetAmount) || targetAmount <= 0) {
-      alert("Target Amount must be a positive number.");
-      return;
-    }
-    if (!formData.targetDate) {
-      alert("Target Date cannot be empty.");
+      onAlert("Validation Error", "Target Amount must be a number greater than 0.");
       return;
     }
     if (isNaN(savedAmount) || savedAmount < 0) {
-      alert("Saved Amount must be a non-negative number.");
+      onAlert("Validation Error", "Saved Amount must be a number greater than or equal to 0.");
       return;
     }
-    if (savedAmount > targetAmount) {
-      alert("Saved Amount cannot exceed Target Amount.");
-      return;
-    }
-    if (!formData.category.trim()) { 
-      alert("Category cannot be empty.");
+    if (new Date(formData.targetDate) < new Date(new Date().toDateString())) {
+      onAlert("Validation Error", "Target Date cannot be in the past.");
       return;
     }
 
-    const dataToSubmit = {
-      name: formData.name,
+    const newGoal = {
+      ...formData,
       targetAmount: targetAmount,
-      savedAmount: isNaN(savedAmount) ? 0 : savedAmount,
-      category: formData.category, 
-      targetDate: formData.targetDate
+      savedAmount: savedAmount,
     };
 
-    onSubmit(dataToSubmit);
+    onSubmit(newGoal);
   };
 
   return (
     <div className="goal-form-container">
-      <h3>{initialData.id ? "Edit Goal" : "Add New Goal"}</h3>
+      <h3>{initialData.id ? "Edit Goal" : "Add a New Goal"}</h3>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="name">Goal Name:</label>
@@ -87,7 +76,7 @@ const GoalForm = ({ onSubmit, initialData = {}, onCancel }) => {
           <input type="number" id="savedAmount" name="savedAmount" value={formData.savedAmount} onChange={handleChange} min="0" step="0.01" />
         </div>
         <div className="form-group">
-          <label htmlFor="category">Category:</label> 
+          <label htmlFor="category">Category:</label>
           <input type="text" id="category" name="category" value={formData.category} onChange={handleChange} required />
         </div>
         <div className="form-group">
