@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import './App.css'
-// Use this URL for your deployed backend
-const API_BASE_URL = 'https://smart-goal-planner-xzdh.onrender.com'; // IMPORTANT: Change this to your new Render backend URL
+import { PlusCircleIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid';
+import './App.css'; // Import the new CSS file
 
-// A simple utility to check if the user is an admin
-const checkAdmin = (user) => user && user.role === 'admin';
+// This URL is a placeholder and should be updated with your Render backend URL
+const API_BASE_URL = 'https://smart-goal-planner-xzdh.onrender.com';
 
 // The main App component handles routing and state
 const App = () => {
@@ -22,7 +21,7 @@ const App = () => {
     }
   }, [token]);
 
-  // Fetches goals from the backend
+  // Fetches goals from the backend for the logged-in user
   const fetchGoals = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/goals`, {
@@ -53,7 +52,10 @@ const App = () => {
         setUser(userData.user);
         setIsLoggedIn(true);
         setPage('dashboard');
-        fetchGoals(); // Fetch goals after successful login
+        // Fetch goals or render admin dashboard based on user role
+        if (userData.user.role === 'user') {
+          fetchGoals();
+        }
       } else {
         logout();
       }
@@ -71,7 +73,8 @@ const App = () => {
         body: JSON.stringify(credentials)
       });
       if (!response.ok) {
-        throw new Error('Login failed. Check your credentials.');
+        const errorText = await response.text();
+        throw new Error(errorText);
       }
       const data = await response.json();
       localStorage.setItem('token', data.token);
@@ -91,7 +94,8 @@ const App = () => {
         body: JSON.stringify(userData)
       });
       if (!response.ok) {
-        throw new Error('Registration failed. Username may be taken.');
+        const errorText = await response.text();
+        throw new Error(errorText);
       }
       await response.json();
       setError('');
@@ -109,17 +113,23 @@ const App = () => {
     setPage('login');
   };
 
-  // Render the current page based on state
+  // Render the current page based on state and user role
   const renderPage = () => {
     if (page === 'login') return <LoginPage onLogin={login} onTogglePage={() => setPage('register')} error={error} />;
     if (page === 'register') return <RegisterPage onRegister={register} onTogglePage={() => setPage('login')} error={error} />;
-    if (page === 'dashboard' && user) return <DashboardPage user={user} onLogout={logout} goals={goals} />;
+    if (page === 'dashboard' && user) {
+      if (user.role === 'admin') {
+        return <AdminDashboardPage user={user} onLogout={logout} />;
+      } else {
+        return <UserDashboardPage user={user} onLogout={logout} goals={goals} fetchGoals={fetchGoals} token={token} />;
+      }
+    }
     return <p>Loading...</p>;
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-8">
+    <div className="app-container">
+      <div className="main-content-wrapper">
         {renderPage()}
       </div>
     </div>
@@ -138,16 +148,16 @@ const LoginPage = ({ onLogin, onTogglePage, error }) => {
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Login</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+    <div className="auth-form-container">
+      <h2 className="section-title">Login</h2>
+      {error && <p className="error-message">{error}</p>}
+      <form onSubmit={handleSubmit} className="auth-form">
+        <div className="form-group">
+          <label className="form-label" htmlFor="username">
             Username
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="form-input"
             id="username"
             type="text"
             placeholder="Username"
@@ -155,12 +165,12 @@ const LoginPage = ({ onLogin, onTogglePage, error }) => {
             onChange={(e) => setUsername(e.target.value)}
           />
         </div>
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">
             Password
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="form-input"
             id="password"
             type="password"
             placeholder="********"
@@ -168,15 +178,15 @@ const LoginPage = ({ onLogin, onTogglePage, error }) => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <div className="flex items-center justify-between">
+        <div className="form-actions">
           <button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="btn-primary"
             type="submit"
           >
             Sign In
           </button>
           <button
-            className="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800"
+            className="text-link"
             type="button"
             onClick={onTogglePage}
           >
@@ -199,16 +209,16 @@ const RegisterPage = ({ onRegister, onTogglePage, error }) => {
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Register</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+    <div className="auth-form-container">
+      <h2 className="section-title">Register</h2>
+      {error && <p className="error-message">{error}</p>}
+      <form onSubmit={handleSubmit} className="auth-form">
+        <div className="form-group">
+          <label className="form-label" htmlFor="username">
             Username
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="form-input"
             id="username"
             type="text"
             placeholder="Username"
@@ -216,12 +226,12 @@ const RegisterPage = ({ onRegister, onTogglePage, error }) => {
             onChange={(e) => setUsername(e.target.value)}
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">
             Password
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="form-input"
             id="password"
             type="password"
             placeholder="********"
@@ -229,12 +239,12 @@ const RegisterPage = ({ onRegister, onTogglePage, error }) => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="role">
+        <div className="form-group">
+          <label className="form-label" htmlFor="role">
             Role
           </label>
           <select
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="form-input"
             id="role"
             value={role}
             onChange={(e) => setRole(e.target.value)}
@@ -243,15 +253,15 @@ const RegisterPage = ({ onRegister, onTogglePage, error }) => {
             <option value="admin">Admin</option>
           </select>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="form-actions">
           <button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="btn-primary"
             type="submit"
           >
             Register
           </button>
           <button
-            className="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800"
+            className="text-link"
             type="button"
             onClick={onTogglePage}
           >
@@ -263,39 +273,266 @@ const RegisterPage = ({ onRegister, onTogglePage, error }) => {
   );
 };
 
-const DashboardPage = ({ user, onLogout, goals }) => {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <h2 className="text-3xl font-bold mb-4 text-gray-800">Welcome, {user.username}!</h2>
-      <p className="text-gray-600 mb-6">You are logged in with the **{user.role}** role.</p>
+const UserDashboardPage = ({ user, onLogout, goals, fetchGoals, token }) => {
+  const [newGoal, setNewGoal] = useState({ name: '', targetAmount: '', savedAmount: '', category: '' });
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [error, setError] = useState('');
 
-      <h3 className="text-2xl font-semibold mb-4 text-gray-800">Your Financial Goals</h3>
+  const handleCreateGoal = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_BASE_URL}/goals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newGoal)
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create goal');
+      }
+      setNewGoal({ name: '', targetAmount: '', savedAmount: '', category: '' });
+      fetchGoals(); // Refresh the goals list
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleUpdateGoal = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_BASE_URL}/goals/${editingGoal.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editingGoal)
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update goal');
+      }
+      setEditingGoal(null); // Exit editing mode
+      fetchGoals(); // Refresh the goals list
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteGoal = async (goalId) => {
+    if (window.confirm('Are you sure you want to delete this goal?')) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/goals/${goalId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete goal');
+        }
+        fetchGoals(); // Refresh the goals list
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchGoals();
+  }, [token]);
+
+  return (
+    <div className="dashboard-page">
+      <h2 className="section-title">Welcome, {user.username}!</h2>
+      <p className="user-role-text">You are logged in with the **{user.role}** role.</p>
+      <button
+        className="btn-logout"
+        onClick={onLogout}
+      >
+        Logout
+      </button>
+
+      {error && <p className="error-message">{error}</p>}
+
+      {/* Form for Creating/Editing Goals */}
+      <div className="goal-form-section">
+        <h3 className="goal-form-title">
+          {editingGoal ? 'Edit Goal' : 'Create New Goal'}
+        </h3>
+        <form onSubmit={editingGoal ? handleUpdateGoal : handleCreateGoal} className="goal-form">
+          <div className="goal-form-fields">
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Goal Name"
+              value={editingGoal ? editingGoal.name : newGoal.name}
+              onChange={(e) => editingGoal ? setEditingGoal({ ...editingGoal, name: e.target.value }) : setNewGoal({ ...newGoal, name: e.target.value })}
+            />
+            <input
+              className="form-input"
+              type="number"
+              placeholder="Target Amount"
+              value={editingGoal ? editingGoal.targetAmount : newGoal.targetAmount}
+              onChange={(e) => editingGoal ? setEditingGoal({ ...editingGoal, targetAmount: e.target.value }) : setNewGoal({ ...newGoal, targetAmount: e.target.value })}
+            />
+            <input
+              className="form-input"
+              type="number"
+              placeholder="Saved Amount"
+              value={editingGoal ? editingGoal.savedAmount : newGoal.savedAmount}
+              onChange={(e) => editingGoal ? setEditingGoal({ ...editingGoal, savedAmount: e.target.value }) : setNewGoal({ ...newGoal, savedAmount: e.target.value })}
+            />
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Category"
+              value={editingGoal ? editingGoal.category : newGoal.category}
+              onChange={(e) => editingGoal ? setEditingGoal({ ...editingGoal, category: e.target.value }) : setNewGoal({ ...newGoal, category: e.target.value })}
+            />
+          </div>
+          <div className="goal-form-buttons">
+            <button
+              className="btn-primary"
+              type="submit"
+            >
+              {editingGoal ? 'Update Goal' : 'Add Goal'}
+            </button>
+            {editingGoal && (
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={() => setEditingGoal(null)}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <h3 className="goals-list-title">Your Financial Goals</h3>
       {goals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+        <div className="goal-list-container">
           {goals.map(goal => (
-            <div key={goal.id} className="bg-gray-50 rounded-lg p-4 shadow text-left">
-              <h4 className="font-bold text-lg">{goal.name}</h4>
-              <p>Target: ${goal.targetAmount}</p>
-              <p>Saved: ${goal.savedAmount}</p>
-              <p>Category: {goal.category}</p>
+            <div key={goal.id} className="goal-card">
+              <div>
+                <h4 className="goal-card-title">{goal.name}</h4>
+                <p>Target: ${goal.targetAmount}</p>
+                <p>Saved: ${goal.savedAmount}</p>
+                <p>Category: {goal.category}</p>
+              </div>
+              <div className="goal-actions">
+                <button onClick={() => setEditingGoal(goal)} className="btn-icon">
+                  <PencilSquareIcon className="icon-edit" />
+                </button>
+                <button onClick={() => handleDeleteGoal(goal.id)} className="btn-icon">
+                  <TrashIcon className="icon-delete" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       ) : (
         <p>No goals found. Start adding some!</p>
       )}
+    </div>
+  );
+};
 
+const AdminDashboardPage = ({ user, onLogout }) => {
+  const [users, setUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [error, setError] = useState('');
+  const token = localStorage.getItem('token');
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data.users);
+      setTotalUsers(data.totalUsers);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user and all their goals?')) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete user');
+        }
+        fetchUsers(); // Refresh the user list
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [token]);
+
+  return (
+    <div className="dashboard-page">
+      <h2 className="section-title">Admin Dashboard</h2>
+      <p className="user-role-text">Welcome, {user.username}! You are logged in with the **{user.role}** role.</p>
       <button
-        className="mt-8 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        className="btn-logout"
         onClick={onLogout}
       >
         Logout
       </button>
+
+      {error && <p className="error-message">{error}</p>}
+      
+      <h3 className="stats-title">Total Users: {totalUsers}</h3>
+      
+      <div className="users-list-container">
+        {users.length > 0 ? (
+          <div className="users-list">
+            {users.map(u => (
+              <div key={u.id} className="user-card">
+                <div>
+                  <h4 className="user-card-title">{u.username}</h4>
+                  <p>Role: {u.role}</p>
+                </div>
+                {u.id !== user.id && (
+                  <button onClick={() => handleDeleteUser(u.id)} className="btn-icon">
+                    <TrashIcon className="icon-delete" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No users found.</p>
+        )}
+      </div>
     </div>
   );
 };
 
 // Main component to be exported
 export default function AppWrapper() {
-  return <App />;
+  return (
+    <>
+      <App />
+    </>
+  );
 }
