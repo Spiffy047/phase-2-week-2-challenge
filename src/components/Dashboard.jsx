@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import GoalList from './GoalList';
 import GoalForm from './GoalForm';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../AuthContext'; // A new hook to get user data
+import { supabase } from './supabaseClient'; // Corrected import path
+import { useAuth } from './AuthContext'; // A new hook to get user data
 
 const Dashboard = () => {
   const [goals, setGoals] = useState([]);

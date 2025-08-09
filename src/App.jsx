@@ -5,8 +5,7 @@ import Dashboard from './components/Dashboard';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-// The import paths are relative to the current file's location.
-// Assuming both these files are now in the 'src/components' directory
+// The import paths are now correctly pointing to the components directory
 import { supabase } from './components/supabaseClient';
 import { AuthProvider, useAuth } from './components/AuthContext';
 
