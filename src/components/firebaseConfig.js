@@ -2,26 +2,19 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// IMPORTANT: These variables are provided by the hosting environment. Do not modify.
-const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
-const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : {};
+// Your web app's Firebase configuration from environment variables
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+};
 
-let app;
-let auth;
-let db;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Only initialize Firebase if the config object is not empty
-if (Object.keys(firebaseConfig).length > 0) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } catch (error) {
-    console.error("Failed to initialize Firebase:", error);
-    // These variables will remain undefined
-  }
-} else {
-  console.warn("Firebase configuration is missing or empty. The app will run without Firebase services. Please ensure the hosting environment provides the __firebase_config variable.");
-}
-
-export { app, auth, db, appId };
+export { app, auth, db };
