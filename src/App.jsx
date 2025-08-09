@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
 import { initializeApp } from 'firebase/app';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
