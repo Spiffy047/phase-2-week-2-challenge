@@ -8,7 +8,7 @@ import Dashboard from './components/Dashboard';
 import GoalCard from './components/GoalCard';
 import GoalForm from './components/GoalForm';
 import Footer from './components/Footer';
-import AuthModal from './components/AuthModal';
+import LandingPage from './components/LandingPage';
 import './App.css';
 
 const App = () => {
@@ -21,99 +21,108 @@ const App = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [firebaseInitError, setFirebaseInitError] = useState(null);
 
   useEffect(() => {
     let firebaseConfig = null;
     let initialAuthToken = null;
 
-    // First, try to get config from the Canvas environment
-    if (typeof __firebase_config !== 'undefined' && typeof __initial_auth_token !== 'undefined') {
+    if (typeof __firebase_config !== 'undefined') {
       try {
         firebaseConfig = JSON.parse(__firebase_config);
         initialAuthToken = __initial_auth_token;
         console.log("Using Canvas environment variables.");
       } catch (e) {
         console.error("Failed to parse __firebase_config from Canvas globals.", e);
+        firebaseConfig = {
+          apiKey: "placeholder",
+          authDomain: "placeholder",
+          projectId: "placeholder",
+          storageBucket: "placeholder",
+          messagingSenderId: "placeholder",
+          appId: "placeholder"
+        };
+        setFirebaseInitError("Using placeholder Firebase config. The provided config was invalid.");
       }
-    } 
-    // If not in Canvas, try to get config from standard environment variables
-    else if (process.env.REACT_APP_FIREBASE_CONFIG) {
-      try {
-        firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
-        console.log("Using standard environment variables.");
-      } catch (e) {
-        console.error("Failed to parse REACT_APP_FIREBASE_CONFIG environment variable.", e);
-      }
+    } else {
+      console.log("No Canvas environment variables found. Using placeholder config.");
+      firebaseConfig = {
+        apiKey: "placeholder",
+        authDomain: "placeholder",
+        projectId: "placeholder",
+        storageBucket: "placeholder",
+        messagingSenderId: "placeholder",
+        appId: "placeholder"
+      };
+      setFirebaseInitError("No Firebase configuration found. Using a placeholder config.");
     }
-
-    // Explicitly check for a valid config object before proceeding.
-    // The previous error suggests this object might be null or malformed.
+    
     if (!firebaseConfig || typeof firebaseConfig !== 'object' || !firebaseConfig.apiKey) {
-      console.error("Firebase config is missing or invalid after parsing.");
+      console.error("Firebase config is missing or invalid after all attempts.");
       setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the environment variable is a correctly formatted JSON string.");
       setIsAuthReady(true);
       return;
     }
 
-    // Proceed with initialization if config is available and valid
-    const app = initializeApp(firebaseConfig);
-    const firestore = getFirestore(app);
-    const firebaseAuth = getAuth(app);
-    setDb(firestore);
-    setAuth(firebaseAuth);
+    try {
+      const app = initializeApp(firebaseConfig);
+      const firestore = getFirestore(app);
+      const firebaseAuth = getAuth(app);
+      setDb(firestore);
+      setAuth(firebaseAuth);
 
-    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
-      console.log("onAuthStateChanged fired. User:", user);
-      if (user) {
-        console.log("User is authenticated. UID:", user.uid);
-        setUserId(user.uid);
-        setShowAuthModal(false);
-      } else {
-        console.log("No user found. Attempting anonymous sign-in.");
-        setUserId(null);
-        // Use the initial token if available, otherwise sign in anonymously
-        if (initialAuthToken) {
-          try {
-            await signInWithCustomToken(firebaseAuth, initialAuthToken);
-            console.log("Signed in with custom token.");
-          } catch (error) {
-            console.error("Error signing in with custom token:", error);
-          }
+      const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+        console.log("onAuthStateChanged fired. User:", user);
+        if (user) {
+          console.log("User is authenticated. UID:", user.uid);
+          setUserId(user.uid);
         } else {
-          try {
-            await signInAnonymously(firebaseAuth);
-            console.log("Signed in anonymously.");
-          } catch (error) {
-            console.error("Error during anonymous authentication:", error);
-          }
+          console.log("No user found.");
+          setUserId(null);
         }
-      }
+        setIsAuthReady(true);
+        console.log("Authentication state is ready.");
+      });
+      return () => unsubscribeAuth();
+    } catch (e) {
+      console.error("Firebase initialization failed:", e);
+      setFirebaseInitError(`Firebase initialization failed. Error: ${e.message}`);
       setIsAuthReady(true);
-      console.log("Authentication state is ready.");
-    });
-    return () => unsubscribeAuth();
+    }
   }, []);
 
   useEffect(() => {
     if (isAuthReady && db && userId) {
-      const goalsColRef = collection(db, 'artifacts', 'default-app-id', 'users', userId, 'goals');
+      const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const goalsColRef = collection(db, 'artifacts', currentAppId, 'users', userId, 'goals');
       const unsubscribe = onSnapshot(goalsColRef, (snapshot) => {
         const goalsData = snapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id
         }));
         setGoals(goalsData);
+      }, (error) => {
+        console.error("Error fetching goals from Firestore:", error);
+        if (error.code === "permission-denied") {
+            setFirebaseInitError("Access to the database was denied. Please check your security rules.");
+        } else {
+            setFirebaseInitError("Could not connect to Firestore. Check your network connection.");
+        }
       });
 
       return () => unsubscribe();
     }
   }, [isAuthReady, db, userId]);
-
-  const handleAuthSubmit = async (email, password, mode) => {
-    // This functionality is not used with the provided authentication method
+  
+  const handleAnonymousSignIn = async () => {
+    if (auth) {
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Error during anonymous sign-in:", error);
+        setFirebaseInitError(`Anonymous sign-in failed. Error: ${error.message}`);
+      }
+    }
   };
 
   const handleLogout = async () => {
@@ -192,11 +201,6 @@ const App = () => {
     setEditingGoal(null);
   };
 
-  const handleViewDashboardClick = () => {
-    setShowGoalForm(false);
-    setEditingGoal(null);
-  };
-
   if (!isAuthReady) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -208,34 +212,34 @@ const App = () => {
 
   if (firebaseInitError) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <p className="text-red-500 font-semibold text-lg text-center p-4">{firebaseInitError}</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-100 text-center p-4">
+        <p className="text-red-500 font-semibold text-lg">{firebaseInitError}</p>
+        <p className="text-gray-500 mt-4">The app may not function correctly without a valid Firebase configuration.</p>
       </div>
     );
+  }
+
+  // Render the LandingPage if the user is not authenticated
+  if (!userId) {
+    return <LandingPage onGetStarted={handleAnonymousSignIn} />;
   }
 
   return (
     <div className="app-container">
       <Navbar
         onAddGoalClick={() => { setShowGoalForm(true); setEditingGoal(null); }}
-        onViewDashboardClick={handleViewDashboardClick}
-        onLoginClick={() => { setAuthMode('login'); setShowAuthModal(true); }}
-        onSignupClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
         onLogoutClick={handleLogout}
         userId={userId}
       />
 
       <main className="main-content-wrapper">
-        {showAuthModal && (
-          <AuthModal
-            mode={authMode}
-            onSubmit={handleAuthSubmit}
-            onClose={() => setShowAuthModal(false)}
-            onSwitchMode={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+        {showGoalForm ? (
+          <GoalForm
+            onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
+            initialData={editingGoal || {}}
+            onCancel={handleCancelForm}
           />
-        )}
-
-        {userId && !showGoalForm && !showAuthModal ? (
+        ) : (
           <>
             <Dashboard goals={goals} />
             <div className="goals-list">
@@ -254,13 +258,7 @@ const App = () => {
               )}
             </div>
           </>
-        ) : userId && showGoalForm && !showAuthModal ? (
-          <GoalForm
-            onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal}
-            initialData={editingGoal || {}}
-            onCancel={handleCancelForm}
-          />
-        ) : null}
+        )}
       </main>
 
       <Footer />
@@ -280,5 +278,3 @@ const App = () => {
     </div>
   );
 };
-
-export default App;
