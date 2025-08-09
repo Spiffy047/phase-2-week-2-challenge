@@ -3,9 +3,8 @@ import {
   AiOutlineLineChart,
   AiOutlineStar,
   AiOutlineUser,
-} from 'react-icons/ai'; // Correct import path
-
-// ... rest of your component
+} from 'react-icons/Ai'; // Corrected import path with a capital 'A'
+import { AiOutlineArrowRight } from "react-icons/ai"; // Example of another correct import
 
 const LandingPage = ({ onSignInClick, onSignUpClick }) => {
   return (
@@ -33,17 +32,31 @@ const LandingPage = ({ onSignInClick, onSignUpClick }) => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        <section className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-800 mb-4">
-            Achieve Your Goals Smarter, Not Harder
+        <section className="text-center">
+          <h2 className="text-5xl font-extrabold text-gray-900 leading-tight mb-4">
+            Achieve Your Financial Goals with a Plan
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Plan, track, and crush your goals with a powerful, intuitive tool
-            that keeps you motivated and on track.
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Set, track, and manage your savings goals effortlessly with our smart
+            goal planner.
           </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={onSignUpClick}
+              className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105 shadow-lg"
+            >
+              Get Started
+            </button>
+            <button
+              onClick={onSignInClick}
+              className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold text-lg border border-indigo-600 hover:bg-indigo-50 transition duration-300 transform hover:scale-105 shadow-lg"
+            >
+              Learn More
+            </button>
+          </div>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        <section className="grid md:grid-cols-3 gap-8 mt-16 text-center">
           <div className="bg-white p-8 rounded-lg shadow-lg">
             <div className="flex justify-center items-center h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full mx-auto mb-4">
               <AiOutlineLineChart size={32} />
@@ -52,8 +65,8 @@ const LandingPage = ({ onSignInClick, onSignUpClick }) => {
               Track Your Progress
             </h3>
             <p className="text-gray-600">
-              Visualize your journey and stay motivated as you see how far you've
-              come.
+              Easily monitor your savings journey and stay motivated as you see
+              how far you've come.
             </p>
           </div>
           <div className="bg-white p-8 rounded-lg shadow-lg">
@@ -64,8 +77,8 @@ const LandingPage = ({ onSignInClick, onSignUpClick }) => {
               Set SMART Goals
             </h3>
             <p className="text-gray-600">
-              Create specific, measurable, achievable, relevant, and
-              time-bound goals.
+              Create specific, measurable, achievable, relevant, and time-bound
+              goals.
             </p>
           </div>
           <div className="bg-white p-8 rounded-lg shadow-lg">
@@ -84,7 +97,7 @@ const LandingPage = ({ onSignInClick, onSignUpClick }) => {
 
       <footer className="bg-gray-800 text-white py-6 mt-12">
         <div className="container mx-auto px-4 text-center">
-          <p>&copy; {new Date().getFullYear()} SmartGoal Planner. All rights reserved.</p>
+          <p>&copy; 2024 SmartGoal Planner. All rights reserved.</p>
         </div>
       </footer>
     </div>
@@ -92,3 +105,4 @@ const LandingPage = ({ onSignInClick, onSignUpClick }) => {
 };
 
 export default LandingPage;
+
