@@ -64,27 +64,33 @@ const App = () => {
     setAuth(firebaseAuth);
 
     const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+      console.log("onAuthStateChanged fired. User:", user);
       if (user) {
+        console.log("User is authenticated. UID:", user.uid);
         setUserId(user.uid);
         setShowAuthModal(false);
       } else {
+        console.log("No user found. Attempting anonymous sign-in.");
         setUserId(null);
         // Use the initial token if available, otherwise sign in anonymously
         if (initialAuthToken) {
           try {
             await signInWithCustomToken(firebaseAuth, initialAuthToken);
+            console.log("Signed in with custom token.");
           } catch (error) {
             console.error("Error signing in with custom token:", error);
           }
         } else {
           try {
             await signInAnonymously(firebaseAuth);
+            console.log("Signed in anonymously.");
           } catch (error) {
             console.error("Error during anonymous authentication:", error);
           }
         }
       }
       setIsAuthReady(true);
+      console.log("Authentication state is ready.");
     });
     return () => unsubscribeAuth();
   }, []);
