@@ -97,7 +97,9 @@ const App = () => {
         const errorText = await response.text();
         throw new Error(errorText);
       }
-      await response.json();
+      // The server is not expected to return a JSON body on successful registration,
+      // so we will skip the JSON parsing to avoid an error.
+      // await response.json(); // This line was causing the error
       setError('');
       setPage('login'); // Redirect to login page after successful registration
     } catch (err) {
