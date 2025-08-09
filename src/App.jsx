@@ -26,52 +26,67 @@ const App = () => {
   const [firebaseInitError, setFirebaseInitError] = useState(null);
 
   useEffect(() => {
-    // We use the global variables provided by this environment.
     let firebaseConfig = null;
-    if (typeof __firebase_config !== 'undefined') {
+    let initialAuthToken = null;
+
+    // First, try to get config from the Canvas environment
+    if (typeof __firebase_config !== 'undefined' && typeof __initial_auth_token !== 'undefined') {
       try {
         firebaseConfig = JSON.parse(__firebase_config);
+        initialAuthToken = __initial_auth_token;
+        console.log("Using Canvas environment variables.");
       } catch (e) {
-        console.error("Failed to parse __firebase_config.", e);
+        console.error("Failed to parse __firebase_config from Canvas globals.", e);
+      }
+    } 
+    // If not in Canvas, try to get config from standard environment variables
+    else if (process.env.REACT_APP_FIREBASE_CONFIG) {
+      try {
+        firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
+        console.log("Using standard environment variables.");
+      } catch (e) {
+        console.error("Failed to parse REACT_APP_FIREBASE_CONFIG environment variable.", e);
       }
     }
-
-    if (firebaseConfig && firebaseConfig.projectId && firebaseConfig.apiKey) {
-      const app = initializeApp(firebaseConfig);
-      const firestore = getFirestore(app);
-      const firebaseAuth = getAuth(app);
-      setDb(firestore);
-      setAuth(firebaseAuth);
-
-      const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
-        if (user) {
-          setUserId(user.uid);
-          setShowAuthModal(false);
-        } else {
-          setUserId(null);
-          // Use signInWithCustomToken if the global token is available, otherwise sign in anonymously
-          if (typeof __initial_auth_token !== 'undefined') {
-            try {
-              await signInWithCustomToken(firebaseAuth, __initial_auth_token);
-            } catch (error) {
-              console.error("Error signing in with custom token:", error);
-            }
-          } else {
-            try {
-              await signInAnonymously(firebaseAuth);
-            } catch (error) {
-              console.error("Error during anonymous authentication:", error);
-            }
-          }
-        }
-        setIsAuthReady(true);
-      });
-      return () => unsubscribeAuth();
-    } else {
+    // Handle cases where no configuration is found
+    if (!firebaseConfig) {
       console.error("Firebase config is missing or invalid.");
       setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the environment is configured correctly.");
       setIsAuthReady(true);
+      return;
     }
+
+    // Proceed with initialization if config is available
+    const app = initializeApp(firebaseConfig);
+    const firestore = getFirestore(app);
+    const firebaseAuth = getAuth(app);
+    setDb(firestore);
+    setAuth(firebaseAuth);
+
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        setShowAuthModal(false);
+      } else {
+        setUserId(null);
+        // Use the initial token if available, otherwise sign in anonymously
+        if (initialAuthToken) {
+          try {
+            await signInWithCustomToken(firebaseAuth, initialAuthToken);
+          } catch (error) {
+            console.error("Error signing in with custom token:", error);
+          }
+        } else {
+          try {
+            await signInAnonymously(firebaseAuth);
+          } catch (error) {
+            console.error("Error during anonymous authentication:", error);
+          }
+        }
+      }
+      setIsAuthReady(true);
+    });
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
