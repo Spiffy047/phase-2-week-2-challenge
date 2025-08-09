@@ -48,15 +48,17 @@ const App = () => {
         console.error("Failed to parse REACT_APP_FIREBASE_CONFIG environment variable.", e);
       }
     }
-    // Handle cases where no configuration is found
-    if (!firebaseConfig) {
-      console.error("Firebase config is missing or invalid.");
-      setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the environment is configured correctly.");
+
+    // Explicitly check for a valid config object before proceeding.
+    // The previous error suggests this object might be null or malformed.
+    if (!firebaseConfig || typeof firebaseConfig !== 'object' || !firebaseConfig.apiKey) {
+      console.error("Firebase config is missing or invalid after parsing.");
+      setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the environment variable is a correctly formatted JSON string.");
       setIsAuthReady(true);
       return;
     }
 
-    // Proceed with initialization if config is available
+    // Proceed with initialization if config is available and valid
     const app = initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
     const firebaseAuth = getAuth(app);
