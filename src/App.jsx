@@ -95,7 +95,6 @@ const App = () => {
 
   useEffect(() => {
     if (isAuthReady && db && userId) {
-      // Fix for the build error: check if __app_id is defined
       const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
       const goalsColRef = collection(db, 'artifacts', currentAppId, 'users', userId, 'goals');
       const unsubscribe = onSnapshot(goalsColRef, (snapshot) => {
