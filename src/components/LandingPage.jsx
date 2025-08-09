@@ -1,10 +1,11 @@
 import React from 'react';
-import { HeroiconsOutlineShieldCheck } from '@heroicons/react/outline'; // This import is not available. Please use a library like `react-icons` if you need icons. Or, replace this with a temporary SVG icon.
 import {
   AiOutlineLineChart,
   AiOutlineStar,
   AiOutlineUser,
-} from 'react-icons/ai'; // using react-icons for a placeholder
+} from 'react-icons/ai'; // Correct import path
+
+// ... rest of your component
 
 const LandingPage = ({ onSignInClick, onSignUpClick }) => {
   return (
