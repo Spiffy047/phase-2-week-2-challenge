@@ -4,7 +4,8 @@ import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { supabase } from './supabaseClient';
+import { supabase } from './components/supabaseClient';
+
 import './App.css';
 
 function App() {
