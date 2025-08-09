@@ -25,16 +25,6 @@ const App = () => {
   const [firebaseInitError, setFirebaseInitError] = useState(null);
 
   useEffect(() => {
-    // Replace with your actual Firebase config object
-    const hardcodedFirebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
     let deployedFirebaseConfig;
     if (typeof process !== 'undefined' && process.env.VITE_FIREBASE_CONFIG) {
         try {
@@ -44,10 +34,10 @@ const App = () => {
         }
     }
 
-    const config = deployedFirebaseConfig || hardcodedFirebaseConfig;
+    const config = deployedFirebaseConfig;
 
-    // Only proceed if a valid config is found and it doesn't contain placeholders.
-    if (config && config.projectId && config.apiKey && config.apiKey !== "YOUR_API_KEY") {
+    // The app will ONLY initialize if a valid config is found from the environment variable.
+    if (config && config.projectId && config.apiKey) {
       const app = initializeApp(config);
       const firestore = getFirestore(app);
       const firebaseAuth = getAuth(app);
@@ -71,8 +61,8 @@ const App = () => {
       });
       return () => unsubscribeAuth();
     } else {
-      console.error("Firebase config is missing or invalid. Please provide your configuration.");
-      setFirebaseInitError("Firebase configuration is missing or invalid. Please check your environment variables or hardcoded values.");
+      console.error("Firebase config is missing. Please provide your configuration via VITE_FIREBASE_CONFIG environment variable.");
+      setFirebaseInitError("Firebase configuration is missing or invalid. Please ensure the VITE_FIREBASE_CONFIG environment variable is set correctly on your hosting provider.");
       setIsAuthReady(true); // Still set to true to show an error message.
     }
   }, []);
