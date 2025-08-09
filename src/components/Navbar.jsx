@@ -1,11 +1,22 @@
 import React from 'react';
+import { supabase } from '../supabaseClient';
+import { useAuth } from '../AuthContext';
 
-const Navbar = ({ user, onLogout }) => {
+const Navbar = () => {
+  const { user } = useAuth();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
-    <nav className="navbar">
-      <div className="navbar-brand">Smart Goal Planner</div>
+    <nav className="bg-white shadow-md p-4 flex justify-between items-center">
+      <div className="text-2xl font-bold text-indigo-600">Smart Goals</div>
       {user && (
-        <button onClick={onLogout} className="btn-primary">
+        <button
+          onClick={handleLogout}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
           Logout
         </button>
       )}
